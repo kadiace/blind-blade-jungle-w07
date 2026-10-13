@@ -8,3 +8,5 @@ server.log
 # 사용자별 IDE 설정
 *.user
 .vs/
+deploy-staging/
+logserver-deploy.zip

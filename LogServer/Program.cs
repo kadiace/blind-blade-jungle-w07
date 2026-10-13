@@ -29,7 +29,7 @@ public sealed class ServerOptions
 }
 
 /// <summary>
-/// 업로드 응답 본문. sessionId와 저장 accepted 건수를 담는다.
+/// 업로드 응답 본문. sessionId와 저장 accepted 건수, 정제 요약을 담는다.
 /// 재전송으로 교체된 경우에만 Replaced를 직렬화해 클라이언트가 교체 여부를 알 수 있게 한다.
 /// </summary>
 public sealed class UploadResponse
@@ -43,6 +43,42 @@ public sealed class UploadResponse
     /// <summary>동일 sessionId 파일이 이미 있어 교체된 경우 true. 신규 응답에서는 직렬화하지 않는다.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Replaced { get; set; }
+
+    /// <summary>정제·집계한 세션 요약. 클라이언트가 전송 즉시 처리 결과를 확인할 수 있게 한다.</summary>
+    public UploadSummary Summary { get; set; } = new UploadSummary();
+}
+
+/// <summary>
+/// 수신 로그를 정제·집계한 간단 요약. 요약 CSV 한 행과 같은 수치를 JSON으로 제공한다.
+/// </summary>
+public sealed class UploadSummary
+{
+    /// <summary>요약 행이 저장된 월(yyyy-MM).</summary>
+    public string Month { get; set; } = string.Empty;
+
+    /// <summary>요약 기준 시각(세션 시작, 초 단위 표기).</summary>
+    public string DateUtc { get; set; } = string.Empty;
+
+    /// <summary>세션 지속 시간(초, 소수 1자리).</summary>
+    public double DurationSec { get; set; }
+
+    /// <summary>정상 종료 세션이면 true.</summary>
+    public bool EndedCleanly { get; set; }
+
+    /// <summary>전체 로그 행 수.</summary>
+    public int Total { get; set; }
+
+    /// <summary>Warning 행 수.</summary>
+    public int Warnings { get; set; }
+
+    /// <summary>Error·Assert 행 수.</summary>
+    public int Errors { get; set; }
+
+    /// <summary>Exception 행 수.</summary>
+    public int Exceptions { get; set; }
+
+    /// <summary>가장 많이 기록된 카테고리. 항목이 없으면 빈 문자열.</summary>
+    public string TopCategory { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -131,17 +167,19 @@ public static class Program
 
         bool replaced = sessionStore.SaveSession(batch);
         sessionStore.SaveRaw(batch.SessionId, body, bodyIsGzip);
-        string month = summary.Upsert(batch);
+        _ = summary.Upsert(batch);
 
         int accepted = batch.Entries?.Length ?? 0;
+        UploadSummary info = summary.Describe(batch);
         Console.WriteLine(
-            $"upload session={batch.SessionId} entries={accepted} replaced={replaced} month={month} gzip={bodyIsGzip}");
+            $"upload session={batch.SessionId} entries={accepted} replaced={replaced} month={info.Month} gzip={bodyIsGzip}");
 
         UploadResponse response = new()
         {
             SessionId = batch.SessionId,
             Accepted = accepted,
             Replaced = replaced ? true : null,
+            Summary = info,
         };
 
         return Results.Json(response, _jsonOptions, statusCode: replaced ? 200 : StatusCodes.Status202Accepted);

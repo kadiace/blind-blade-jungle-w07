@@ -31,31 +31,51 @@ public sealed class SessionSummary
     public string SummaryDirectory => Path.Combine(_options.DataPath, "summary");
 
     /// <summary>
-    /// 수신한 배치의 요약 행을 계산해 월별 요약 CSV에서 sessionId 키로 교체 기록한다.
-    /// batch의 시각과 entries를 사용하며, 행이 쓰인 월 키(yyyy-MM)를 반환한다.
+    /// 수신 배치의 정제 요약 수치를 계산한다.
+    /// batch의 시각과 entries를 사용해 기간·레벨별 건수·최다 카테고리를 담은 UploadSummary를 반환한다.
     /// </summary>
-    public string Upsert(UploadBatch batch)
+    public UploadSummary Describe(UploadBatch batch)
     {
         bool hasStart = CsvSessionStore.TryParseUtc(batch.StartedAtUtc, out DateTime startedAtUtc);
         DateTime reference = hasStart ? startedAtUtc : DateTime.UtcNow;
-        string month = reference.ToString("yyyy-MM", CultureInfo.InvariantCulture);
-        string path = Path.Combine(SummaryDirectory, month + ".csv");
-
         bool hasEnd = CsvSessionStore.TryParseUtc(batch.EndedAtUtc, out DateTime endedAtUtc);
         double durationSec = hasStart && hasEnd ? Math.Max(0.0, (endedAtUtc - startedAtUtc).TotalSeconds) : 0.0;
         LogEntry[] entries = batch.Entries ?? System.Array.Empty<LogEntry>();
         CountLevels(entries, out int warnings, out int errors, out int exceptions);
 
+        return new UploadSummary
+        {
+            Month = reference.ToString("yyyy-MM", CultureInfo.InvariantCulture),
+            DateUtc = reference.ToString(DATE_FORMAT, CultureInfo.InvariantCulture),
+            DurationSec = Math.Round(durationSec, 1),
+            EndedCleanly = batch.EndedCleanly,
+            Total = entries.Length,
+            Warnings = warnings,
+            Errors = errors,
+            Exceptions = exceptions,
+            TopCategory = FindTopCategory(entries),
+        };
+    }
+
+    /// <summary>
+    /// 수신한 배치의 요약 행을 계산해 월별 요약 CSV에서 sessionId 키로 교체 기록한다.
+    /// batch의 시각과 entries를 사용하며, 행이 쓰인 월 키(yyyy-MM)를 반환한다.
+    /// </summary>
+    public string Upsert(UploadBatch batch)
+    {
+        UploadSummary info = Describe(batch);
+        string path = Path.Combine(SummaryDirectory, info.Month + ".csv");
+
         string[] row = new string[COLUMN_COUNT]
         {
             batch.SessionId,
-            reference.ToString(DATE_FORMAT, CultureInfo.InvariantCulture),
-            durationSec.ToString("0.0", CultureInfo.InvariantCulture),
-            batch.EndedCleanly ? "true" : "false",
-            entries.Length.ToString(CultureInfo.InvariantCulture),
-            warnings.ToString(CultureInfo.InvariantCulture),
-            errors.ToString(CultureInfo.InvariantCulture),
-            exceptions.ToString(CultureInfo.InvariantCulture),
+            info.DateUtc,
+            info.DurationSec.ToString("0.0", CultureInfo.InvariantCulture),
+            info.EndedCleanly ? "true" : "false",
+            info.Total.ToString(CultureInfo.InvariantCulture),
+            info.Warnings.ToString(CultureInfo.InvariantCulture),
+            info.Errors.ToString(CultureInfo.InvariantCulture),
+            info.Exceptions.ToString(CultureInfo.InvariantCulture),
             batch.IsEditor ? "true" : "false",
             CsvSessionStore.NormalizeNewlines(batch.Platform),
             CsvSessionStore.NormalizeNewlines(batch.AppVersion),
@@ -99,7 +119,33 @@ public sealed class SessionSummary
             gate.Release();
         }
 
-        return month;
+        return info.Month;
+    }
+
+    /// <summary>
+    /// 로그 항목 중 가장 많은 카테고리를 찾는다.
+    /// entries를 입력으로 사용하며, 동률이면 먼저 나온 카테고리를, 항목이 없으면 빈 문자열을 반환한다.
+    /// </summary>
+    private static string FindTopCategory(LogEntry[] entries)
+    {
+        Dictionary<string, int> counts = new(StringComparer.OrdinalIgnoreCase);
+        string best = string.Empty;
+        int bestCount = 0;
+
+        foreach (LogEntry entry in entries)
+        {
+            string category = string.IsNullOrEmpty(entry.Category) ? "Unity" : entry.Category;
+            int count = counts.TryGetValue(category, out int current) ? current + 1 : 1;
+            counts[category] = count;
+
+            if (count > bestCount)
+            {
+                bestCount = count;
+                best = category;
+            }
+        }
+
+        return best;
     }
 
     /// <summary>
