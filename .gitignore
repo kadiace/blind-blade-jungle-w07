@@ -142,3 +142,7 @@ fmod_editor.log
 _JinseokBae
 .playwright-mcp
 .omo
+
+# 에디터·툴 로그 파일
+fmod_editor.log
+/Logs/

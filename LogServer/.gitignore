@@ -1,8 +1,10 @@
 # .NET 빌드 산출물
 bin/
 obj/
+publish/
 
-# 서버 실행 로그
+# 서버 수신 로그 데이터와 실행 로그
+data/
 server.log
 
 # 사용자별 IDE 설정
