@@ -68,6 +68,7 @@ public abstract class EnemyAttackBehaviour : MonoBehaviour
     public bool IsAvailable => isActiveAndEnabled && !IsBusy && Time.time >= _nextAttackTime;
     public virtual bool AllowsMovement => false;
     public EnemyAttackContext Context => _context;
+    public EnemyAttackTrace CurrentTelemetryTrace { get; private set; }
     public float LastHeartbeatInterval { get; private set; }
     public int HeartbeatCount => Mathf.Max(1, _heartbeatCount);
     public float ExecutionDuration => ActiveDuration;
@@ -286,6 +287,9 @@ public abstract class EnemyAttackBehaviour : MonoBehaviour
         if (!_usesHeartbeatForCurrentAttack && (SoundAction == EnemySoundAction.Melee || SoundAction == EnemySoundAction.Ranged))
             PlayActionSound(EnemySoundStage.AttackVoice);
         PlayActionSound(EnemySoundStage.Action);
+        CurrentTelemetryTrace?.Dispose();
+        CurrentTelemetryTrace = EnemyTelemetrySource.BeginAttack(gameObject,
+            this is EnemyRangedAttack ? TelemetryAttackKind.Ranged : TelemetryAttackKind.Melee);
         PerformAttack(context);
         if (_phase != EnemyAttackPhase.Active)
             return;

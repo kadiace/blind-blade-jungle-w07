@@ -29,6 +29,7 @@ public sealed class GameSceneInitializer : MonoBehaviour
     private PlayerInputCommandAdapter _legacyInput;
     private KatanaInputCommandAdapter _katanaInput;
     private bool _started;
+    private TelemetryStageRecorder _telemetryRecorder;
 
     public bool SwordNoiseEnabled => _useSwordNoise;
     public float SwordHearingDistance => _swordHearingDistance;
@@ -99,6 +100,9 @@ public sealed class GameSceneInitializer : MonoBehaviour
             _swordNoise = gameObject.AddComponent<StageSwordNoise>();
             _swordNoise.Initialize(_player, enemies.ToArray(), _swordHearingDistance, _swordAlertDuration);
         }
+        _telemetryRecorder = GetComponent<TelemetryStageRecorder>();
+        if (_telemetryRecorder != null && Game.Instance.TelemetryManager != null)
+            _telemetryRecorder.Prepare(Game.Instance.TelemetryManager, Game.Instance.InputManager, _player);
         _state.BeginPlaying();
     }
 
@@ -123,6 +127,7 @@ public sealed class GameSceneInitializer : MonoBehaviour
 
     void OnDisable()
     {
+        if (_telemetryRecorder != null) _telemetryRecorder.Shutdown();
         if (_legacyInput != null) _legacyInput.Shutdown();
         if (_katanaInput != null) _katanaInput.Shutdown();
         if (_round != null) _round.Shutdown();

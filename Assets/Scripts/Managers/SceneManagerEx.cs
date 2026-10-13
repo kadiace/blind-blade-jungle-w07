@@ -9,24 +9,28 @@ public class SceneManagerEx
     public void LoadScene(string name, LoadSceneMode mode = LoadSceneMode.Single)
     {
         Validate(name);
+        if (mode == LoadSceneMode.Single) TelemetryManager.NotifySceneExit();
         SceneManager.LoadScene(name, mode);
     }
 
     public void LoadScene(int buildIndex, LoadSceneMode mode = LoadSceneMode.Single)
     {
         Validate(buildIndex);
+        if (mode == LoadSceneMode.Single) TelemetryManager.NotifySceneExit();
         SceneManager.LoadScene(buildIndex, mode);
     }
 
     public AsyncOperation LoadSceneAsync(string name, LoadSceneMode mode = LoadSceneMode.Single)
     {
         Validate(name);
+        if (mode == LoadSceneMode.Single) TelemetryManager.NotifySceneExit();
         return SceneManager.LoadSceneAsync(name, mode);
     }
 
     public AsyncOperation LoadSceneAsync(int buildIndex, LoadSceneMode mode = LoadSceneMode.Single)
     {
         Validate(buildIndex);
+        if (mode == LoadSceneMode.Single) TelemetryManager.NotifySceneExit();
         return SceneManager.LoadSceneAsync(buildIndex, mode);
     }
 

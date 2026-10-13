@@ -1,0 +1,7 @@
+<linker>
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="TelemetryPosition" preserve="all" />
+    <type fullname="TelemetryRotation" preserve="all" />
+    <type fullname="&lt;&gt;f__AnonymousType*" preserve="all" />
+  </assembly>
+</linker>

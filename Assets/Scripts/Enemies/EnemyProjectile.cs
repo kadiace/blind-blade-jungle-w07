@@ -134,7 +134,7 @@ public class EnemyProjectile : MonoBehaviour
     protected virtual void ProcessHit(Collider collider, Vector3 point)
     {
         DamageContext damage = new DamageContext(_damage.Amount, _damage.Instigator,
-            point, _direction, _damage.PatternId);
+            point, _direction, _damage.PatternId, _damage.AttackTrace);
         IDamageable receiver = collider.GetComponentInParent<IDamageable>();
         bool parried = false;
         bool defended = receiver is KatanaDamageReceiver katana

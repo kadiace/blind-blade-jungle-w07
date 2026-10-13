@@ -41,6 +41,7 @@ public sealed class BeastBossAttack : MonoBehaviour
     private readonly RaycastHit[] _hits = new RaycastHit[32];
     private readonly Collider[] _contacts = new Collider[32];
     private bool _attackResolved;
+    private EnemyAttackTrace _currentTelemetryTrace;
 
     [Header("근접 공격 박동 전조")]
     [SerializeField] private bool _useHeartbeatTelegraph = true;
@@ -132,6 +133,8 @@ public sealed class BeastBossAttack : MonoBehaviour
         if (forward.sqrMagnitude < 0.000001f) forward = transform.forward;
         Vector3 right = Vector3.Cross(Vector3.up, forward);
         _attackResolved = false;
+        using EnemyAttackTrace telemetryTrace = EnemyTelemetrySource.BeginAttack(gameObject, TelemetryAttackKind.Melee);
+        _currentTelemetryTrace = telemetryTrace;
         AttackStarted?.Invoke();
         for (int i = 1; i <= _zigzagSegments; i++)
         {
@@ -184,6 +187,8 @@ public sealed class BeastBossAttack : MonoBehaviour
         _agent.updateRotation = false;
         _jumping = true;
         _attackResolved = false;
+        using EnemyAttackTrace telemetryTrace = EnemyTelemetrySource.BeginAttack(gameObject, TelemetryAttackKind.Melee);
+        _currentTelemetryTrace = telemetryTrace;
         AttackStarted?.Invoke();
         try
         {
@@ -348,7 +353,7 @@ public sealed class BeastBossAttack : MonoBehaviour
     private void ApplyAttack(KatanaDamageReceiver player, float damage, Vector3 direction, Vector3 point, string pattern)
     {
         _attackResolved = true;
-        DamageContext context = new DamageContext(damage, gameObject, point, direction, pattern);
+        DamageContext context = new DamageContext(damage, gameObject, point, direction, pattern, _currentTelemetryTrace);
         if (!player.TryDefendProjectile(context, out bool parried)) player.TakeDamage(context);
         else if (parried && _parrySound != SoundId.None)
         {

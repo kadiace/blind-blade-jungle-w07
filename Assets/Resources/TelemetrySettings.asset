@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aad8e82aa9a3236459d856183f176339, type: 3}
+  m_Name: TelemetrySettings
+  m_EditorClassIdentifier: Assembly-CSharp::TelemetrySettings
+  _recordingEnabled: 1
+  _participantId: tester
+  _testVersion: 1
+  _queueCapacity: 4096
+  _reservedEventCapacity: 512
+  _fileSizeMegabytes: 64
+  _flushIntervalSeconds: 0.5
+  _shutdownTimeoutSeconds: 10

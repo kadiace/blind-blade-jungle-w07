@@ -17,6 +17,7 @@ public class Game : MonoSingleton<Game>
     public InputManager InputManager { get; private set; }
     public GameStateManager GameStateManager { get; private set; }
     public UIManager UIManager { get; private set; }
+    public TelemetryManager TelemetryManager { get; private set; }
 
     /// <summary>씬에 배치된 UIManager와 등록된 플레이어로 공통 세션을 초기화하고 필수 매니저 준비 여부를 반환한다.</summary>
     public bool InitializeSession()
@@ -91,6 +92,7 @@ public class Game : MonoSingleton<Game>
         _effectManager.Initialize();
         InputManager = LoadManager<InputManager>(ResourcePaths.INPUT_MANAGER_PATH);
         GameStateManager = LoadManager<GameStateManager>(ResourcePaths.GAME_STATE_MANAGER_PATH);
+        TelemetryManager = LoadManager<TelemetryManager>(ResourcePaths.TELEMETRY_MANAGER_PATH);
     }
 
     /// <summary>기존 T 매니저를 재사용하거나 path의 프리팹을 동적 생성해 반환한다.</summary>

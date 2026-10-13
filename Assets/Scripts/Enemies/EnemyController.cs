@@ -38,6 +38,9 @@ public class EnemyController : MonoBehaviour
 
 
     public EnemyState State => _state;
+    public bool HasVisibleTarget => _hasVisibleTarget;
+    public bool IsInvestigatingNoise => !_hasVisibleTarget && Time.time < _noiseAlertUntil;
+    public Vector3 LastKnownPosition => _lastKnownPosition;
     private bool AllowsWalkingChase => _allowWalkingChase || _attackSelector.MeleeOnly;
     public event Action<EnemyState> StateChanged;
 

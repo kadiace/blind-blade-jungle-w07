@@ -106,6 +106,11 @@ public class IntroMenu : MonoBehaviour
     private void QuitGame()
     {
         PlayerPrefs.Save();
+        if (Game.IsInitialized && Game.Instance.TelemetryManager != null)
+        {
+            Game.Instance.TelemetryManager.RequestQuit();
+            return;
+        }
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

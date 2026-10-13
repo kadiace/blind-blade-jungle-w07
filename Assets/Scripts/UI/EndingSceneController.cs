@@ -114,6 +114,7 @@ public sealed class EndingSceneController : MonoBehaviour
         }
         Time.timeScale = 1f;
         IntroFadeInController.RequestFadeIn();
+        TelemetryManager.NotifySceneExit();
         SceneManager.LoadSceneAsync(_menuSceneName);
     }
 }

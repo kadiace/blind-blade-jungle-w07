@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4364763688821012378}
   - component: {fileID: 775909485436668562}
   - component: {fileID: 27634349527860858}
+  - component: {fileID: 9024741178986271366}
   m_Layer: 0
   m_Name: GameSceneInitializer
   m_TagString: Untagged
@@ -79,3 +80,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cecdde535af3fc5438d43bb2003c6eeb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &9024741178986271366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5477092273469113479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31dd3022ded1a3346a83ccee0e46f297, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TelemetryStageRecorder
+  _stageId: 
+  _mapVersion: 1

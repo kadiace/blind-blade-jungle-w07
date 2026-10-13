@@ -85,6 +85,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -106,9 +108,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &2253480226399273074
 GameObject:
@@ -130,6 +134,7 @@ GameObject:
   - component: {fileID: 1877680012681666384}
   - component: {fileID: 3893505437189904229}
   - component: {fileID: 7429742852752373956}
+  - component: {fileID: 3013564540836045629}
   m_Layer: 0
   m_Name: Enemy_RhythmCharge
   m_TagString: Untagged
@@ -377,6 +382,21 @@ MonoBehaviour:
     m_Bits: 51
   _showAttackGizmos: 1
   _gizmoDuration: 2
+--- !u!114 &3013564540836045629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2253480226399273074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04f978f8fa05a8743890bc555e895aa2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyTelemetrySource
+  _enemyId: 
+  _enemyType: 4
+  _countsForStageClear: 1
 --- !u!1001 &172936748127884816
 PrefabInstance:
   m_ObjectHideFlags: 0

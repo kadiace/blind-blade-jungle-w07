@@ -152,7 +152,7 @@ public sealed class EnemyChargeHitbox : MonoBehaviour
                 return;
         }
         _damaged.Add(receiver);
-        receiver.TakeDamage(new DamageContext(_damage, gameObject, point, _context.Direction, _context.PatternId));
+        receiver.TakeDamage(new DamageContext(_damage, gameObject, point, _context.Direction, _context.PatternId, _activeAttack.CurrentTelemetryTrace));
     }
 
 #if UNITY_EDITOR

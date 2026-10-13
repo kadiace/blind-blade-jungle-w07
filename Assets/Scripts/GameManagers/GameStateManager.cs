@@ -62,6 +62,7 @@ public sealed class GameStateManager : MonoBehaviour
     public void Restart()
     {
         if (State != GameplayState.GameOver) return;
+        if (Game.Instance.TelemetryManager != null) Game.Instance.TelemetryManager.EndAttempt("Retry", false);
         ChangeState(GameplayState.Restarting);
         RestoreTimeAndCursor();
 #if UNITY_EDITOR

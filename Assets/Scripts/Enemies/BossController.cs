@@ -102,6 +102,7 @@ public sealed class BossController : MonoBehaviour
     private readonly Collider[] _placementContacts = new Collider[16];
 
     public BossState State => _state;
+    public bool HasTelemetryTarget => _routine != null && _playerHealth != null && _playerHealth.IsAlive;
     public event Action<BossState> StateChanged;
 
     void Awake()
@@ -222,9 +223,10 @@ public sealed class BossController : MonoBehaviour
             Vector3 direction = (_playerMotor.ViewOrigin - Vector3.up * 0.1f - origin).normalized;
             if (direction.sqrMagnitude < 0.0001f) yield break;
             transform.rotation = Quaternion.LookRotation(direction);
+            using EnemyAttackTrace telemetryTrace = EnemyTelemetrySource.BeginAttack(gameObject, TelemetryAttackKind.Ranged);
             RangedFiring?.Invoke();
             EnemyProjectile projectile = Instantiate(_projectilePrefab, origin, Quaternion.LookRotation(direction));
-            projectile.Initialize(new DamageContext(_rangedDamage, gameObject, origin, direction, "BossRanged"),
+            projectile.Initialize(new DamageContext(_rangedDamage, gameObject, origin, direction, "BossRanged", telemetryTrace),
                 direction, _player.transform);
             if (i + 1 < _rangedShots) yield return new WaitForSeconds(_rangedInterval);
         }
@@ -242,6 +244,7 @@ public sealed class BossController : MonoBehaviour
         transform.rotation = Quaternion.LookRotation(direction);
         float remaining = _chargeDistance;
         float until = Time.time + _chargeDuration;
+        using EnemyAttackTrace telemetryTrace = EnemyTelemetrySource.BeginAttack(gameObject, TelemetryAttackKind.Melee);
         ChargeStarted?.Invoke();
         while (Time.time < until && remaining > 0.01f)
         {
@@ -264,7 +267,7 @@ public sealed class BossController : MonoBehaviour
             {
                 _agent.Move(direction * Mathf.Max(0f, contactDistance - 0.05f));
                 _motor.Stop();
-                _playerHealth.TakeDamage(new DamageContext(_chargeDamage, gameObject, point, direction, "BossCharge"));
+                _playerHealth.TakeDamage(new DamageContext(_chargeDamage, gameObject, point, direction, "BossCharge", telemetryTrace));
                 if (_playerHealth.IsAlive)
                     _playerMotor.ApplyCombatPush(direction, _chargePushDistance, _chargePushDuration);
                 yield break;

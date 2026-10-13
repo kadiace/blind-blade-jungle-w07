@@ -102,12 +102,13 @@ public sealed class HumanBossAttack : MonoBehaviour
                 if (!_mounted && facing.sqrMagnitude > 0.000001f)
                     transform.rotation = Quaternion.LookRotation(facing);
                 direction = (aimPosition - _muzzle.position).normalized;
+                using EnemyAttackTrace telemetryTrace = EnemyTelemetrySource.BeginAttack(gameObject, TelemetryAttackKind.Ranged);
                 TwinBossProjectile projectile = Instantiate(_projectilePrefab, _muzzle.position,
                     Quaternion.LookRotation(direction));
                 projectile.ReflectedHit += HandleReflectedHit;
                 projectile.Released += HandleProjectileReleased;
                 _projectiles.Add(projectile);
-                projectile.Initialize(_health, _hitCollider, _player, _damage, direction);
+                projectile.Initialize(_health, _hitCollider, _player, _damage, direction, telemetryTrace);
                 ShotFired?.Invoke();
             }
             shots++;

@@ -138,6 +138,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -159,9 +161,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &7039733516697902587
 GameObject:
@@ -188,6 +192,7 @@ GameObject:
   - component: {fileID: 1474035193874858927}
   - component: {fileID: 3571996316640888278}
   - component: {fileID: 45364169199649266}
+  - component: {fileID: 6245819392700316623}
   m_Layer: 0
   m_Name: Enemy_MultiPattern
   m_TagString: Untagged
@@ -274,6 +279,8 @@ MonoBehaviour:
   _obstacleMask:
     serializedVersion: 2
     m_Bits: 51
+  _hearingDistance: 20
+  _showHearingRange: 1
 --- !u!114 &2789688505603104607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -290,8 +297,6 @@ MonoBehaviour:
   _repathInterval: 0.2
   _memoryDuration: 3
   _allowWalkingChase: 1
-  _hearingDistance: 40
-  _showHearingRange: 1
 --- !u!114 &9174286875222053205
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -544,10 +549,10 @@ Rigidbody:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7039733516697902587}
-  serializedVersion: 4
+  serializedVersion: 5
   m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -582,6 +587,21 @@ MonoBehaviour:
   _minimumDeathPitchSemitones: -4
   _maximumDeathPitchSemitones: -1
   _originalDeathPitchChance: 0.3
+--- !u!114 &6245819392700316623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7039733516697902587}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04f978f8fa05a8743890bc555e895aa2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyTelemetrySource
+  _enemyId: 
+  _enemyType: 3
+  _countsForStageClear: 1
 --- !u!1 &8140427288079008813
 GameObject:
   m_ObjectHideFlags: 0

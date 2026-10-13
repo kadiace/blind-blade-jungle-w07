@@ -28,6 +28,12 @@ public sealed class InputManager : MonoBehaviour
     public bool IsInitialized => _state != null;
     public bool IsGameplayInputEnabled { get; private set; }
     public event Action<bool> GameplayInputEnabledChanged;
+    public event Action<TelemetryInputKind> GameplayInputPressed;
+    public bool CanAcceptGameplayInput => IsGameplayInputEnabled && Game.Player != null && !Game.Player.IsPaused
+        && Application.isFocused && (!_lockCursorOnClick || InputDeviceDisplay.IsGamepad || Cursor.lockState == CursorLockMode.Locked);
+    public bool AttackInputHeld => CanAcceptGameplayInput && _actions.Player.Attack.IsPressed();
+    public bool DefenseInputHeld => CanAcceptGameplayInput && _guard.IsPressed();
+    public bool ScanInputActive => CanAcceptGameplayInput && (_crouchHold.IsPressed() || _crouchToggled);
 
     void Awake()
     {
@@ -45,6 +51,10 @@ public sealed class InputManager : MonoBehaviour
         for (int i = 0; i < attack.bindings.Count; i++)
             if (attack.bindings[i].path.StartsWith("<Gamepad>"))
                 attack.ApplyBindingOverride(i, "<Gamepad>/rightShoulder");
+        attack.performed += HandleTelemetryAttack;
+        _guard.performed += HandleTelemetryDefense;
+        _crouchHold.performed += HandleTelemetryScan;
+        _crouchToggle.performed += HandleTelemetryScan;
     }
 
     void Update()
@@ -100,11 +110,30 @@ public sealed class InputManager : MonoBehaviour
     void OnDestroy()
     {
         Shutdown();
+        _actions.Player.Attack.performed -= HandleTelemetryAttack;
+        _guard.performed -= HandleTelemetryDefense;
+        _crouchHold.performed -= HandleTelemetryScan;
+        _crouchToggle.performed -= HandleTelemetryScan;
         _actions.Dispose();
         _crouchHold.Dispose();
         _crouchToggle.Dispose();
         _guard.Dispose();
         _dodge.Dispose();
+    }
+
+    /// <summary>context의 실제 새 공격 누름을 입력 허용 정책에 따라 로그 구독자에게 전달한다.</summary>
+    private void HandleTelemetryAttack(InputAction.CallbackContext context) { PublishTelemetryInput(context, TelemetryInputKind.Attack); }
+
+    /// <summary>context의 실제 새 방어 누름을 입력 허용 정책에 따라 로그 구독자에게 전달한다.</summary>
+    private void HandleTelemetryDefense(InputAction.CallbackContext context) { PublishTelemetryInput(context, TelemetryInputKind.Defense); }
+
+    /// <summary>context의 홀드 또는 토글 스캔 누름을 입력 허용 정책에 따라 로그 구독자에게 전달한다.</summary>
+    private void HandleTelemetryScan(InputAction.CallbackContext context) { PublishTelemetryInput(context, TelemetryInputKind.Scan); }
+
+    /// <summary>context가 허용된 새 누름이면 kind 입력 이벤트를 발행하고 유지·해제·동기화는 제외한다.</summary>
+    private void PublishTelemetryInput(InputAction.CallbackContext context, TelemetryInputKind kind)
+    {
+        if (context.action.IsPressed() && CanAcceptGameplayInput) GameplayInputPressed?.Invoke(kind);
     }
 
     /// <summary>state와 Game.Player의 장치를 연결한다. 초기 입력은 차단하고 Playing 전환을 기다린다.</summary>

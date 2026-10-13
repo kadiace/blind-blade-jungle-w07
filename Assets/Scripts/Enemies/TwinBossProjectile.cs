@@ -27,13 +27,13 @@ public sealed class TwinBossProjectile : MonoBehaviour
 
     /// <summary>shooter·player·damage·direction으로 발사자와 피해 및 초기 비행 방향을 설정한다.</summary>
     public void Initialize(EnemyHealth shooter, Collider shooterCollider,
-        KatanaDamageReceiver player, float damage, Vector3 direction)
+        KatanaDamageReceiver player, float damage, Vector3 direction, EnemyAttackTrace attackTrace = null)
     {
         _shooter = shooter;
         _shooterCollider = shooterCollider;
         _player = player;
         _direction = direction.normalized;
-        _damage = new DamageContext(damage, shooter.gameObject, transform.position, _direction, "TwinBossRanged");
+        _damage = new DamageContext(damage, shooter.gameObject, transform.position, _direction, "TwinBossRanged", attackTrace);
         _elapsed = 0f;
         _reflected = false;
         _flying = true;
@@ -98,7 +98,7 @@ public sealed class TwinBossProjectile : MonoBehaviour
     private void ProcessHit(Collider collider, Vector3 point)
     {
         DamageContext context = new DamageContext(_damage.Amount, _damage.Instigator,
-            point, _direction, _damage.PatternId);
+            point, _direction, _damage.PatternId, _damage.AttackTrace);
         if (!_reflected && collider.GetComponentInParent<KatanaDamageReceiver>() == _player)
         {
             if (_player.TryDefendProjectile(context, out bool parried))

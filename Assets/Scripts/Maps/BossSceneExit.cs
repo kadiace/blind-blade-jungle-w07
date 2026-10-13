@@ -88,6 +88,7 @@ public sealed class BossSceneExit : MonoBehaviour
         }
         SceneTransitionFade.RequestEntry(next);
         Time.timeScale = 1f;
+        TelemetryManager.NotifySceneExit();
         SceneManager.LoadSceneAsync(next);
     }
 
