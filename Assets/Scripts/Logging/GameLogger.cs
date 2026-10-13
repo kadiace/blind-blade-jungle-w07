@@ -33,7 +33,8 @@ public class GameLogger : MonoSingleton<GameLogger>
     private static readonly int MainThreadId = Thread.CurrentThread.ManagedThreadId;
 
     [Header("서버 연결")]
-    [SerializeField] private string _developmentServerUrl = DEFAULT_SERVER_URL;
+    // 개발 기본값은 이 PC(로그 서버 호스트)의 LAN 이름이다. IP가 바뀌어도 유지되며, 상황에 따라 Inspector에서 덮어쓴다.
+    [SerializeField] private string _developmentServerUrl = "http://DESKTOP-K3Q9E4A:5000/api/logs";
     [SerializeField] private string _releaseServerUrl = DEFAULT_SERVER_URL;
     [SerializeField] private string _apiKey = DEFAULT_API_KEY;
 

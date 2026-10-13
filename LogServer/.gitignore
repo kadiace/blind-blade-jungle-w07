@@ -2,6 +2,9 @@
 bin/
 obj/
 
+# 서버 실행 로그
+server.log
+
 # 사용자별 IDE 설정
 *.user
 .vs/
