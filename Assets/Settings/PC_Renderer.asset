@@ -31,7 +31,10 @@ MonoBehaviour:
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
-  m_AssetVersion: 2
+  m_AssetVersion: 3
+  m_PrepassLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   m_OpaqueLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -71,8 +74,12 @@ MonoBehaviour:
   _depthSensitivity: 120
   _normalSensitivity: 4
   _transparentThreshold: 0.015
+  _sceneryColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  _threatColor: {r: 1, g: 0.1, b: 0.06, a: 1}
+  _threatFillOpacity: 0.6
   _shader: {fileID: 4800000, guid: c7c52e823b854534adfb6cc98ed70499, type: 3}
   _transparentDepthShader: {fileID: 4800000, guid: a93ad5573676a1a4fbb7f81bd5031075, type: 3}
+  _layerMaskShader: {fileID: 4800000, guid: 250a1a1f07798ef49bdfc7a908c6c983, type: 3}
 --- !u!114 &7833122117494664109
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -43,9 +43,9 @@ public sealed class KatanaDamageReceiver : PlayerHealth
 
     /// <summary>
     /// context의 투사체 진입 방향으로 전방 가드·패링을 검사하고 방어 성공 여부를 반환한다.
-    /// parried에 정확한 패링 여부를 출력하며 기존 방어 효과와 반격 기회를 적용한다.
+    /// parried에 정확한 패링 여부를 출력하며 기존 방어 효과를 적용한다. allowCounter가 false이면 반격 기회를 만들지 않는다.
     /// </summary>
-    public bool TryDefendProjectile(DamageContext context, out bool parried)
+    public bool TryDefendProjectile(DamageContext context, out bool parried, bool allowCounter = true)
     {
         parried = false;
         if (!isActiveAndEnabled) return false;
@@ -53,7 +53,7 @@ public sealed class KatanaDamageReceiver : PlayerHealth
         bool eligible = incoming.sqrMagnitude > 0.0001f
             && Vector3.Angle(_motor.ViewForward, incoming) <= _frontArc * 0.5f;
         bool perfect = _combat.IsParryWindowOpen;
-        if (!_combat.TryDefendIncoming(context, eligible)) return false;
+        if (!_combat.TryDefendIncoming(context, eligible, allowCounter)) return false;
         parried = perfect;
         return true;
     }

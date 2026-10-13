@@ -882,15 +882,18 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
     /// <summary>
     /// incoming이 eligible인 전방 근접 접촉이고 가드 중이면 피해를 차단한다.
     /// 패링 시간에 따라 적 회복·반동·방어 피드백을 적용하고 일반 적의 근접 가드에 수평 밀림을 추가하여 성공 여부를 반환한다.
+    /// allowCounter가 false이면 정확한 패링에도 반격 대상·자동 반격을 예약하지 않으며 공격자가 사라진 접촉도 처리한다.
     /// </summary>
-    public bool TryDefendIncoming(DamageContext incoming, bool eligible)
+    public bool TryDefendIncoming(DamageContext incoming, bool eligible, bool allowCounter = true)
     {
         if (!isActiveAndEnabled || !eligible || !_player.IsGuarding || _player.IsPaused
             || incoming.Amount <= 0f || Time.timeScale <= 0f) return false;
         bool perfect = IsParryWindowOpen;
-        EnemyHealth counterTarget = perfect ? incoming.Instigator.GetComponentInParent<EnemyHealth>() : null;
+        GameObject instigator = incoming.Instigator;
+        bool counter = perfect && allowCounter;
+        EnemyHealth counterTarget = counter && instigator != null ? instigator.GetComponentInParent<EnemyHealth>() : null;
         _counterTargetId = counterTarget != null && counterTarget.IsAlive ? counterTarget.TargetId : null;
-        _counterUntil = perfect ? Time.time + _counterWindow : 0f;
+        _counterUntil = counter ? Time.time + _counterWindow : 0f;
         _defenseReadyUntil = perfect ? Time.time : Time.time + _blockInputRecovery;
         Vector3 point = _player.GetComponent<EnemyCombatService>().GetGuardContactPoint(incoming.Point);
         _parryOpen = false;
@@ -898,14 +901,16 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
         _weaponState = KatanaWeaponState.Drawn;
         _player.NotifyGuardSuccess();
         _motor.AddCombatRecoil(incoming.Direction, perfect ? 0.9f : 0.6f);
-        foreach (EnemyAttackBehaviour pattern in incoming.Instigator.GetComponents<EnemyAttackBehaviour>())
+        EnemyAttackBehaviour[] patterns = instigator != null
+            ? instigator.GetComponents<EnemyAttackBehaviour>() : System.Array.Empty<EnemyAttackBehaviour>();
+        foreach (EnemyAttackBehaviour pattern in patterns)
         {
             if (pattern.PatternId != incoming.PatternId || !(pattern is EnemyMeleeAttack melee)) continue;
             melee.Deflect(perfect, point);
-            if (!perfect && incoming.Instigator.GetComponentInParent<BossController>() == null)
+            if (!perfect && instigator.GetComponentInParent<BossController>() == null)
             {
                 Vector3 pushDirection = Vector3.ProjectOnPlane(
-                    _player.transform.position - incoming.Instigator.transform.position, Vector3.up);
+                    _player.transform.position - instigator.transform.position, Vector3.up);
                 if (pushDirection.sqrMagnitude < 0.0001f) pushDirection = incoming.Direction;
                 _motor.ApplyCombatPush(pushDirection, _guardPushDistance, _guardPushDuration);
             }
@@ -918,8 +923,11 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
         {
             Publish(KatanaStage.ParrySucceeded, incoming.PatternId, true);
             ParrySucceeded?.Invoke(new KatanaParryResult(incoming, 1));
-            _automaticCounterPending = true;
-            _automaticCounterReadyAt = Time.time + Mathf.Min(_automaticCounterDelay, _counterWindow * 0.5f);
+            if (allowCounter)
+            {
+                _automaticCounterPending = true;
+                _automaticCounterReadyAt = Time.time + Mathf.Min(_automaticCounterDelay, _counterWindow * 0.5f);
+            }
         }
         return true;
     }

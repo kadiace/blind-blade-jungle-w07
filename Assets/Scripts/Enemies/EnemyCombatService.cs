@@ -96,14 +96,14 @@ public sealed class EnemyCombatService : MonoBehaviour, IPlayerCombatService
         return false;
     }
 
-    /// <summary>현재 씬의 활성 생존 적을 즉시 사용할 돌진 대상 목록으로 반환한다. 기존 감지 제공자가 없을 때 화면 중앙 선택에 사용한다.</summary>
+    /// <summary>현재 씬의 활성 생존 적 중 돌진 허용 대상을 즉시 사용할 돌진 대상 목록으로 반환한다. 기존 감지 제공자가 없을 때 화면 중앙 선택에 사용한다.</summary>
     public IReadOnlyList<PlayerPerceivedTarget> GetCurrentTargets()
     {
         _targetCandidates.Clear();
         EnemyHealth[] enemies = FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None);
         foreach (EnemyHealth enemy in enemies)
         {
-            if (!enemy.IsAlive || enemy.gameObject.scene != gameObject.scene)
+            if (!enemy.IsAlive || !enemy.IsDashTargetable || enemy.gameObject.scene != gameObject.scene)
                 continue;
 
             _targetCandidates.Add(new PlayerPerceivedTarget(

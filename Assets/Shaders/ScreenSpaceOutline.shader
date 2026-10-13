@@ -7,6 +7,9 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
         _DepthSensitivity ("Depth Sensitivity", Float) = 50
         _NormalSensitivity ("Normal Sensitivity", Float) = 4
         _TransparentThreshold ("Transparent Coverage Threshold", Float) = 0.015
+        _SceneryColor ("Scenery Color", Color) = (0.3, 0.3, 0.3, 1)
+        _ThreatColor ("Threat Color", Color) = (1, 0.1, 0.06, 1)
+        _ThreatFillOpacity ("Threat Fill Opacity", Float) = 0.6
     }
 
     SubShader
@@ -39,11 +42,16 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
                 float _NormalSensitivity;
                 float _UsePerceptionMask;
                 float _TransparentThreshold;
+                half4 _SceneryColor;
+                half4 _ThreatColor;
+                float _ThreatFillOpacity;
             CBUFFER_END
 
             TEXTURE2D_X(_OutlineOpaqueColor);
             TEXTURE2D_X(_OutlineAlwaysVisibleVfxColor);
             TEXTURE2D_X(_OutlineTransparentDepth);
+            TEXTURE2D_X(_OutlineSceneryMask);
+            TEXTURE2D_X(_OutlineThreatMask);
 
             #define MAX_SOUND_REGIONS 16
             float4 _OutlineObserverRegion;
@@ -113,6 +121,21 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
                 return memoryColor * (1.0 - visibility) + _LineColor.rgb * _LineColor.a * visibility;
             }
 
+            // 항상 보이는 배경 표면은 인지 범위·편집 모드와 무관하게 고정된 배경 선 색상을 사용한다.
+            float3 SurfaceColor(float2 uv, float rawDepth, float hasSurface)
+            {
+                if (hasSurface != 0.0
+                    && SAMPLE_TEXTURE2D_X(_OutlineSceneryMask, sampler_PointClamp, uv).r > 0.5)
+                    return _SceneryColor.rgb * _SceneryColor.a;
+                return PerceptionColor(uv, rawDepth, hasSurface, 1.0);
+            }
+
+            // 위협 대상이 덮는 화면 비율을 반환한다.
+            float ThreatCoverage(float2 uv)
+            {
+                return SAMPLE_TEXTURE2D_X(_OutlineThreatMask, sampler_LinearClamp, uv).r;
+            }
+
             // 깊이의 배경값을 구분하여 하늘의 노멀로 생기는 선을 제외한다.
             float HasSurface(float depth)
             {
@@ -156,8 +179,8 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
                 if (firstSurface != secondSurface)
                 {
                     return max(
-                        PerceptionColor(firstUv, firstRawDepth, firstSurface, 1.0),
-                        PerceptionColor(secondUv, secondRawDepth, secondSurface, 1.0));
+                        SurfaceColor(firstUv, firstRawDepth, firstSurface),
+                        SurfaceColor(secondUv, secondRawDepth, secondSurface));
                 }
                 if (firstSurface == 0.0)
                     return 0.0;
@@ -182,8 +205,8 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
                 if (edge <= 0.0)
                     return 0.0;
                 return edge * max(
-                    PerceptionColor(firstUv, firstRawDepth, firstSurface, 1.0),
-                    PerceptionColor(secondUv, secondRawDepth, secondSurface, 1.0));
+                    SurfaceColor(firstUv, firstRawDepth, firstSurface),
+                    SurfaceColor(secondUv, secondRawDepth, secondSurface));
             }
 
             // 선택 VFX의 실제 RGB 기여에서 모양을 검출하고 보이지 않는 알파 면은 제외한다.
@@ -238,6 +261,17 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
                     abs(AlwaysVisibleCoverage(firstUv) - AlwaysVisibleCoverage(secondUv)),
                     abs(AlwaysVisibleCoverage(thirdUv) - AlwaysVisibleCoverage(fourthUv))) * 1.5);
                 edge = max(edge, foregroundEdge * _LineColor.rgb * _LineColor.a);
+                // 위협 실루엣은 경계를 선명하게, 내부는 반투명하게 다른 모든 선 위에 덮는다.
+                float threatFirst = ThreatCoverage(firstUv);
+                float threatSecond = ThreatCoverage(secondUv);
+                float threatThird = ThreatCoverage(thirdUv);
+                float threatFourth = ThreatCoverage(fourthUv);
+                float threatEdge = saturate(max(abs(threatFirst - threatSecond),
+                    abs(threatThird - threatFourth)) * 1.5);
+                float threatFill = max(ThreatCoverage(uv),
+                    max(max(threatFirst, threatSecond), max(threatThird, threatFourth)));
+                float threat = saturate(max(threatEdge, threatFill * _ThreatFillOpacity));
+                edge = lerp(edge, _ThreatColor.rgb * _ThreatColor.a, threat);
                 return half4(edge, 1.0);
             }
             ENDHLSL
