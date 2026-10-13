@@ -43,6 +43,7 @@
 | 쌍둥이 보스 | [명세](features/쌍둥이_보스.md) |
 | 카타나 애니메이션 좌표계 보정 | [명세](features/카타나_애니메이션_좌표계_보정.md) |
 | 튜토리얼 안내 | [명세](features/튜토리얼_안내.md) |
+| Unity CLI 설치 검증 | [명세](features/Unity_CLI_설치_검증.md) |
 
 | 패드 입력 및 장치별 안내 | [명세](features/패드_입력_안내.md) |
 
