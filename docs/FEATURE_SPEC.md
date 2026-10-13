@@ -46,6 +46,7 @@
 | Unity CLI 설치 검증 | [명세](features/Unity_CLI_설치_검증.md) |
 
 | 패드 입력 및 장치별 안내 | [명세](features/패드_입력_안내.md) |
+| 로그 수집 전송 | [명세](features/로그_수집_전송.md) |
 
 ## 공통 양식
 
