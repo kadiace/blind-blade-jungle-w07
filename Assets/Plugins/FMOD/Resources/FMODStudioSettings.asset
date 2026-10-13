@@ -380,8 +380,8 @@ MonoBehaviour:
   switchSettingsMigration: 1
   HasSourceProject: 1
   HasPlatforms: 1
-  sourceProjectPath: FMODProject/week06-blindblade/week06-blindblade.fspro
-  sourceBankPath: FMODProject/week06-blindblade/Build
+  sourceProjectPath: FMODProject/blind-blade-jungle-w07/week06-blindblade.fspro
+  sourceBankPath: FMODProject/blind-blade-jungle-w07/Build
   sourceBankPathUnformatted: 
   BankRefreshCooldown: 5
   ShowBankRefreshWindow: 1

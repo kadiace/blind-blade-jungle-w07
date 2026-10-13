@@ -1,5 +1,14 @@
 ### FMOD 사운드 매니저
 
+#### FMOD 소스 경로 복구 (2026-10-13)
+
+- 기능 설명: 실제 FMOD 프로젝트 폴더와 Unity 연결 경로를 일치시켜 Bank refresh의 프로젝트 파일 누락 오류를 해결한다.
+- 동작 조건 및 처리 흐름: FMODStudioSettings.asset의 sourceProjectPath는 `FMODProject/blind-blade-jungle-w07/week06-blindblade.fspro`, sourceBankPath는 `FMODProject/blind-blade-jungle-w07/Build`를 사용한다. 플랫폼별 뱅크는 기존 Desktop 설정으로 선택한다. Master/BGM/SFX 자동 로드, 이벤트 및 Bus 연결은 유지한다.
+- 구현 상태: 사용자 승인 후 소스 경로 두 곳만 변경했다. Studio 원본, 음원, 뱅크 파일 및 SDK 코드는 변경하지 않았다.
+- 검증: 연결된 Unity Editor에서 설정 재임포트 후 ValidateSource=true, reason 빈 문자열 및 RefreshBanks 실행 중 오류 없음 확인. 이미 시작된 일시정지 Play 세션은 기존 실패 상태를 유지해 root Bus 조회가 ERR_EVENT_NOTFOUND였으므로, 기존 자동 로드 목록의 미로드 뱅크만 LoadBank로 로드했다. Master/Master.strings/BGM/SFX 로드, bus:/ 조회 및 setPaused/getPaused=OK, BGM_Bus/SFX_Bus 조회=OK, compilationFailed=false를 확인했다. Play 및 일시정지 상태는 유지했다. 새 Play 세션의 자동 로드와 실제 청취는 미확인이다.
+- 관련 코드: `Assets/Plugins/FMOD/Resources/FMODStudioSettings.asset` / FMODUnity.Settings의 소스 프로젝트·뱅크 경로.
+- 연결 및 협업: 기존 FMOD 사운드 매니저와 에디터 뱅크 갱신 기능을 사용한다. 기존 명세 경로와의 충돌은 사용자 승인으로 실제 폴더 경로에 맞춰 갱신했다.
+
 #### 적 리듬 공격 등록 및 취소 기반 — 2단계 (2026-10-12)
 
 - 새 이벤트 6개를 SoundId 23~28 및 기존 SoundLibrary에 등록했다. 중앙 편집·기본 설정·검증은 [사운드 중앙 편집](사운드_중앙_편집.md)의 「적 리듬 공격 사운드 중앙 등록」을 따른다. 기존 ID와 재생 호출부는 유지했다.
@@ -69,7 +78,7 @@
 ##### 3. 기존 FMOD 설정과 Library 확인
 
 1. Unity 상단의 `FMOD > Edit Settings`를 열고 Source Type이 Studio 프로젝트를 사용하는지 확인한다.
-2. 연결 파일이 `FMODProject/week06-blindblade/week06-blindblade.fspro`인지 확인한다. 새 씬을 추가하기 위해 프로젝트 연결이나 Bank 로딩 설정을 변경하지 않는다.
+2. 연결 파일이 `FMODProject/blind-blade-jungle-w07/week06-blindblade.fspro`인지 확인한다. 새 씬을 추가하기 위해 프로젝트 연결이나 Bank 로딩 설정을 변경하지 않는다.
 3. `FMOD > Event Browser`에서 아래 현재 이벤트 표의 발걸음과 검 이벤트가 보이는지 확인한다. Ambience를 사용할 경우 기존 `event:/Test/TestAmbience`도 확인한다. 표시되지 않으면 Studio의 Bank 빌드 및 연결 경로부터 확인한다.
 4. Project 창에서 `Assets/Resources/Sound/SoundLibrary.asset`을 선택한다. Inspector의 Events에 Footstep/Effect/발소리 이벤트와 Ambience/BGM/배경음 이벤트가 연결되어 있는지 확인한다.
 5. Mixer의 Bgm Bus Path=`bus:/BGM_Bus`, Effect Bus Path=`bus:/SFX_Bus`를 확인한다. 이 에셋은 씬마다 복제하거나 Hierarchy에 배치하지 않는다.
@@ -235,7 +244,7 @@ Managers.Sound.Clear();
 
 SoundId는 게임 코드가 사용하는 이름이고, SoundLibrary는 그 이름에 실제 FMOD 이벤트를 연결하는 설정이다. ID만 추가하거나 Studio 이벤트만 제작해서는 매니저 재생이 완성되지 않는다.
 
-1. FMOD Studio에서 이벤트를 제작하고 적절한 Bus/Bank에 연결한 뒤 빌드한다. 실제 프로젝트 경로는 `FMODProject/week06-blindblade/week06-blindblade.fspro`다.
+1. FMOD Studio에서 이벤트를 제작하고 적절한 Bus/Bank에 연결한 뒤 빌드한다. 실제 프로젝트 경로는 `FMODProject/blind-blade-jungle-w07/week06-blindblade.fspro`다.
 2. `Assets/Scripts/Enums/SoundId.cs`의 enum에 이름과 고유 숫자를 추가한다. None=0은 재생에 사용하지 않는다. 이미 저장한 ID의 숫자는 변경하거나 다른 소리에 재사용하지 않는다.
 3. Unity 컴파일을 기다린 뒤 Project에서 기존 `Assets/Resources/Sound/SoundLibrary.asset`을 선택한다. 추가 사운드마다 Library 에셋을 새로 만들지 않는다.
 4. Inspector의 Events 배열에 항목을 하나 추가하고 Id에 새 enum 값, Type에 Effect 또는 BGM, Event에 FMOD Event Browser에서 고른 이벤트를 지정한다.
