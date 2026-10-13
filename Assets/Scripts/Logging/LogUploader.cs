@@ -83,7 +83,7 @@ public class LogUploader
     {
         using (MemoryStream output = new MemoryStream())
         {
-            using (GZipStream gzip = new GZipStream(output, CompressionLevel.Optimal))
+            using (GZipStream gzip = new GZipStream(output, System.IO.Compression.CompressionLevel.Optimal))
             {
                 gzip.Write(source, 0, source.Length);
             }

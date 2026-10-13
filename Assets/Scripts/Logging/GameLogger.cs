@@ -390,11 +390,12 @@ public class GameLogger : MonoSingleton<GameLogger>
     /// </summary>
     private string ResolveServerUrl()
     {
+        // 기본값을 릴리스 주소로 두고 개발 문맥에서만 덮어써 두 필드 모두 항상 사용된다.
+        string url = string.IsNullOrWhiteSpace(_releaseServerUrl) ? DEFAULT_SERVER_URL : _releaseServerUrl;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        return string.IsNullOrWhiteSpace(_developmentServerUrl) ? DEFAULT_SERVER_URL : _developmentServerUrl;
-#else
-        return string.IsNullOrWhiteSpace(_releaseServerUrl) ? DEFAULT_SERVER_URL : _releaseServerUrl;
+        url = string.IsNullOrWhiteSpace(_developmentServerUrl) ? DEFAULT_SERVER_URL : _developmentServerUrl;
 #endif
+        return url;
     }
 
     /// <summary>
