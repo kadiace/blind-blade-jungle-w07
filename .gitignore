@@ -107,6 +107,7 @@ InitTestScene*.unity*
 
 # VS Code
 .vscode
+.idea
 
 # FMOD
 # Never ignore DLLs in the FMOD subfolder.
@@ -134,3 +135,8 @@ fmod_editor.log
 /FMODProject/.unsaved/
 /FMODProject/.restore/
 /Assets/TextMesh Pro
+
+# AI
+_JinseokBae
+.playwright-mcp
+.omo
