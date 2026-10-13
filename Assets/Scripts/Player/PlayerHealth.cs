@@ -64,6 +64,19 @@ public class PlayerHealth : DamageReceiver
             Died?.Invoke(this);
     }
 
+    /// <summary>
+    /// amount만큼 현재 체력을 최대 체력 이하로 회복하고 HealthChanged로 변경을 알린다.
+    /// 사망·비활성 상태, 0 이하 요청과 이미 가득 찬 체력에서는 상태를 변경하지 않는다.
+    /// </summary>
+    public void Heal(float amount)
+    {
+        if (!IsAlive || !(amount > 0f) || _currentHealth >= _maxHealth)
+            return;
+
+        _currentHealth = Mathf.Min(_maxHealth, _currentHealth + amount);
+        HealthChanged?.Invoke(_currentHealth, _maxHealth);
+    }
+
     /// <summary>context의 피해를 현재 가드로 막을 수 있는지 반환한다. 카타나 수신자는 방향 제한을 별도로 적용한다.</summary>
     protected virtual bool CanBlockDamage(DamageContext context)
     {

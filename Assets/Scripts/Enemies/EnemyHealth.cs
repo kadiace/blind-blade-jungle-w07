@@ -15,6 +15,8 @@ public sealed class EnemyHealth : MonoBehaviour, IDamageable
     private bool _dieOnAnyHit;
     [SerializeField] private Collider _hitCollider;
     [SerializeField] private bool _cancelAttackOnHit;
+    [SerializeField, Tooltip("끄면 플레이어의 대상 돌진 공격 후보에서 제외합니다. 다른 피해 판정은 유지합니다.")]
+    private bool _dashTargetable = true;
     [Header("피격 반응")]
     [SerializeField, Min(0f)] private float _hitRecovery = 0.16f;
     [SerializeField, Min(0f)] private float _hitInterruptCooldown = 0.45f;
@@ -30,6 +32,7 @@ public sealed class EnemyHealth : MonoBehaviour, IDamageable
     public float MaxHealth => _maxHealth;
     public bool IsAlive => isActiveAndEnabled && _currentHealth > 0f;
     public bool IsInvulnerable => _invulnerable;
+    public bool IsDashTargetable => _dashTargetable;
     public string TargetId => "Enemy_" + GetInstanceID();
     public event Action<DamageContext> Damaged;
     public event Action<DamageContext> DamageBlocked;
