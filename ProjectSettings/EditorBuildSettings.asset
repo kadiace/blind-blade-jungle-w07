@@ -5,12 +5,6 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 0
-    path: Assets/Scenes/Map/StraightCorridor.unity
-    guid: 7c5251c5b5c4f5349a753a153955a6ea
   - enabled: 1
     path: Assets/Scenes/IntroEndingScene/IntroScene.unity
     guid: c5dfa6ff21aff364eb81cac3bce34500
@@ -20,15 +14,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Build/Stage_2.unity
     guid: 8f50b9b3bdee85d45a114a92791bc8a6
-  - enabled: 0
-    path: Assets/Scenes/Map/Stairwell.unity
-    guid: 174e40602d9728e40a2f2c4479e74a05
-  - enabled: 0
-    path: Assets/Scenes/Map/TCorridor.unity
-    guid: dbb24552915473b4d83ca838cbe5d50b
   - enabled: 1
     path: Assets/Scenes/Build/BossBattle.unity
     guid: c3524dd53ea57421a91c4c3170302965
+  - enabled: 1
+    path: Assets/Scenes/Build/Stage_3.unity
+    guid: d9dead5805b611d40b08d2e2ff99146c
+  - enabled: 1
+    path: Assets/Scenes/Build/TwinBossBattle.unity
+    guid: 0e9473b046d64049b797a477e08eb46c
+  - enabled: 1
+    path: Assets/Scenes/IntroEndingScene/EndingScene.unity
+    guid: 868749d2ea1021f47a301c876bcd2d7d
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

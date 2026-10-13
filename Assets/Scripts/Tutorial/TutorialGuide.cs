@@ -83,7 +83,7 @@ public sealed class TutorialGuide : MonoBehaviour
 {
     [Header("씬 연결")]
     [SerializeField] private PlayerController _player;
-    [SerializeField] private MonologueUI _monologueUI;
+    //[SerializeField] private MonologueUI _monologueUI;
     [SerializeField] private TutorialLesson[] _lessons = Array.Empty<TutorialLesson>();
 
     [Header("독백")]
@@ -177,33 +177,33 @@ public sealed class TutorialGuide : MonoBehaviour
 
         UpdateHolograms();
         ObserveMovement();
-        TutorialLesson area = FindLesson(_player.transform.position + Vector3.up * 0.5f);
-        if (area != _areaLesson)
-        {
-            _areaLesson = area;
-            if (area != null)
-            {
-                int index = Array.IndexOf(_lessons, area);
-                if (Time.time - _lastVisited[index] >= _revisitInterval)
-                {
-                    _lastVisited[index] = Time.time;
-                    _hintLesson = area;
-                    _lineIndex = 0;
-                    ShowLine();
-                }
-            }
-        }
+        //TutorialLesson area = FindLesson(_player.transform.position + Vector3.up * 0.5f);
+        //if (area != _areaLesson)
+        //{
+        //    _areaLesson = area;
+        //    if (area != null)
+        //    {
+        //        int index = Array.IndexOf(_lessons, area);
+        //        if (Time.time - _lastVisited[index] >= _revisitInterval)
+        //        {
+        //            _lastVisited[index] = Time.time;
+        //            _hintLesson = area;
+        //            _lineIndex = 0;
+        //            ShowLine();
+        //        }
+        //    }
+        //}
 
-        if (_ownsMonologue && Time.time >= _nextLineTime)
-        {
-            _lineIndex++;
-            if (_lineIndex < _hintLesson.Monologue.Length) ShowLine();
-            else
-            {
-                if (_hintLesson.Objective == TutorialObjective.Read) CompleteLesson(_hintLesson);
-                HideMonologue();
-            }
-        }
+        //if (_ownsMonologue && Time.time >= _nextLineTime)
+        //{
+        //    _lineIndex++;
+        //    if (_lineIndex < _hintLesson.Monologue.Length) ShowLine();
+        //    else
+        //    {
+        //        if (_hintLesson.Objective == TutorialObjective.Read) CompleteLesson(_hintLesson);
+        //        HideMonologue();
+        //    }
+        //}
     }
 
     void LateUpdate()
@@ -225,15 +225,15 @@ public sealed class TutorialGuide : MonoBehaviour
     }
 
     /// <summary>player, UI 및 각 구간과 홀로그램 재료를 연결한다. 씬 제작 시 사용하는 설정 메서드다.</summary>
-    public void Configure(PlayerController player, MonologueUI monologue, TutorialLesson[] lessons,
-        Material ringMaterial, Material completedMaterial)
-    {
-        _player = player;
-        _monologueUI = monologue;
-        _lessons = lessons;
-        _ringMaterial = ringMaterial;
-        _completedRingMaterial = completedMaterial;
-    }
+    //public void Configure(PlayerController player, MonologueUI monologue, TutorialLesson[] lessons,
+    //    Material ringMaterial, Material completedMaterial)
+    //{
+    //    _player = player;
+    //    _monologueUI = monologue;
+    //    _lessons = lessons;
+    //    _ringMaterial = ringMaterial;
+    //    _completedRingMaterial = completedMaterial;
+    //}
 
     /// <summary>게임 세션 준비 후 플레이어 표현 참조와 이벤트를 연결하고 성공 여부를 반환한다.</summary>
     private bool TryBind()
@@ -254,28 +254,28 @@ public sealed class TutorialGuide : MonoBehaviour
     }
 
     /// <summary>position을 포함하는 독백 영역 중 가장 가까운 안내를 반환한다. 문구가 없는 키 표시와 영역 밖은 null을 반환한다.</summary>
-    private TutorialLesson FindLesson(Vector3 position)
-    {
-        TutorialLesson result = null;
-        float nearest = float.PositiveInfinity;
-        foreach (TutorialLesson lesson in _lessons)
-        {
-            if (lesson.Monologue.Length == 0 || !lesson.Contains(position)) continue;
-            float distance = (lesson.Anchor.position - position).sqrMagnitude;
-            if (distance < nearest) { nearest = distance; result = lesson; }
-        }
-        return result;
-    }
+    //private TutorialLesson FindLesson(Vector3 position)
+    //{
+    //    TutorialLesson result = null;
+    //    float nearest = float.PositiveInfinity;
+    //    foreach (TutorialLesson lesson in _lessons)
+    //    {
+    //        if (lesson.Monologue.Length == 0 || !lesson.Contains(position)) continue;
+    //        float distance = (lesson.Anchor.position - position).sqrMagnitude;
+    //        if (distance < nearest) { nearest = distance; result = lesson; }
+    //    }
+    //    return result;
+    //}
 
-    /// <summary>현재 독백 페이지를 표시한다. 입력 대기 구간이면 지정 입력까지 정지하고, 일반 구간은 다음 페이지 시각을 설정한다.</summary>
-    private void ShowLine()
-    {
-        if (_hintLesson.Monologue.Length == 0) return;
-        _monologueUI.Show(_hintLesson.Monologue[_lineIndex], _lineIndex == _hintLesson.Monologue.Length - 1);
-        _ownsMonologue = true;
-        _nextLineTime = Time.time + _lineDuration;
-        if (_hintLesson.ResumeInput != TutorialResumeInput.None) PauseForLessonInput();
-    }
+    ///// <summary>현재 독백 페이지를 표시한다. 입력 대기 구간이면 지정 입력까지 정지하고, 일반 구간은 다음 페이지 시각을 설정한다.</summary>
+    //private void ShowLine()
+    //{
+    //    if (_hintLesson.Monologue.Length == 0) return;
+    //    _monologueUI.Show(_hintLesson.Monologue[_lineIndex], _lineIndex == _hintLesson.Monologue.Length - 1);
+    //    _ownsMonologue = true;
+    //    _nextLineTime = Time.time + _lineDuration;
+    //    if (_hintLesson.ResumeInput != TutorialResumeInput.None) PauseForLessonInput();
+    //}
 
     /// <summary>시간 배율과 입력 허용 상태를 보관하고 게임 및 플레이어를 지정 명령 입력까지 일시정지한다.</summary>
     private void PauseForLessonInput()
@@ -327,7 +327,7 @@ public sealed class TutorialGuide : MonoBehaviour
     {
         RestoreLessonPause();
         if (!_ownsMonologue) return;
-        if (_monologueUI != null) _monologueUI.SetVisible(false);
+        //if (_monologueUI != null) _monologueUI.SetVisible(false);
         _ownsMonologue = false;
     }
 

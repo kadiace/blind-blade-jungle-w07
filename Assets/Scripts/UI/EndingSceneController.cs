@@ -9,9 +9,9 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class EndingSceneController : MonoBehaviour
 {
-    [Header("엔딩 독백")]
-    [SerializeField] private MonologueData _monologue;
-    [SerializeField] private MonologueUI _ui;
+    //[Header("엔딩 독백")]
+    //[SerializeField] private MonologueData _monologue;
+    //[SerializeField] private MonologueUI _ui;
 
     [Header("페이드 및 복귀")]
     [SerializeField] private CanvasGroup _fade;
@@ -28,27 +28,27 @@ public sealed class EndingSceneController : MonoBehaviour
 
     void Start()
     {
-        if (_monologue == null || _monologue.LineCount == 0 || _ui == null || _fade == null)
-        {
-            Debug.LogError("엔딩 독백 데이터, UI 및 Fade 참조를 확인하세요.", this);
-            enabled = false;
-            return;
-        }
-        for (int i = 0; i < _monologue.LineCount; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(_monologue.GetLine(i))) continue;
-            Debug.LogError($"엔딩 독백의 {i + 1}번째 대사가 비어 있습니다.", this);
-            enabled = false;
-            return;
-        }
-        _ui.Initialize();
+        //if (_monologue == null || _monologue.LineCount == 0 || _ui == null || _fade == null)
+        //{
+        //    Debug.LogError("엔딩 독백 데이터, UI 및 Fade 참조를 확인하세요.", this);
+        //    enabled = false;
+        //    return;
+        //}
+        //for (int i = 0; i < _monologue.LineCount; i++)
+        //{
+        //    if (!string.IsNullOrWhiteSpace(_monologue.GetLine(i))) continue;
+        //    Debug.LogError($"엔딩 독백의 {i + 1}번째 대사가 비어 있습니다.", this);
+        //    enabled = false;
+        //    return;
+        //}
+        //_ui.Initialize();
         _fade.alpha = 0f;
         _fade.blocksRaycasts = false;
         _fade.interactable = false;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         _started = true;
-        ShowLine();
+        //ShowLine();
     }
 
     void Update()
@@ -73,31 +73,31 @@ public sealed class EndingSceneController : MonoBehaviour
         if (next) Advance();
     }
 
-    void OnDisable()
-    {
-        StopAllCoroutines();
-        if (_started && _ui != null) _ui.SetVisible(false);
-        _started = false;
-    }
+    //void OnDisable()
+    //{
+    //    StopAllCoroutines();
+    //    if (_started && _ui != null) _ui.SetVisible(false);
+    //    _started = false;
+    //}
 
-    /// <summary>현재 대사 번호의 문구와 마지막 여부를 기존 UI에 표시하고 같은 프레임의 중복 진행을 방지한다.</summary>
-    private void ShowLine()
-    {
-        _elapsed = 0f;
-        _shownFrame = Time.frameCount;
-        _ui.Show(_monologue.GetLine(_lineIndex), _lineIndex == _monologue.LineCount - 1);
-    }
+    ///// <summary>현재 대사 번호의 문구와 마지막 여부를 기존 UI에 표시하고 같은 프레임의 중복 진행을 방지한다.</summary>
+    //private void ShowLine()
+    //{
+    //    _elapsed = 0f;
+    //    _shownFrame = Time.frameCount;
+    //    _ui.Show(_monologue.GetLine(_lineIndex), _lineIndex == _monologue.LineCount - 1);
+    //}
 
     /// <summary>다음 대사를 표시하거나 마지막 대사가 끝나면 독백을 숨기고 페이드아웃을 시작한다.</summary>
     private void Advance()
     {
         _lineIndex++;
-        if (_lineIndex < _monologue.LineCount)
-        {
-            ShowLine();
-            return;
-        }
-        _ui.SetVisible(false);
+        //if(_lineIndex < _monologue.LineCount)
+        //{
+        //    ShowLine();
+        //    return;
+        //}
+        //_ui.SetVisible(false);
         _fading = true;
         _elapsed = 0f;
         _fade.blocksRaycasts = true;
