@@ -1,0 +1,7 @@
+# .NET 빌드 산출물
+bin/
+obj/
+
+# 사용자별 IDE 설정
+*.user
+.vs/

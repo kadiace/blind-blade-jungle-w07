@@ -44,6 +44,8 @@
 ExportedObj/
 .consulo/
 *.csproj
+# 예외: LogServer는 실제 .NET 프로젝트 파일을 저장소에 두는다
+!LogServer/LogServer.csproj
 *.unityproj
 *.sln
 *.slnx
