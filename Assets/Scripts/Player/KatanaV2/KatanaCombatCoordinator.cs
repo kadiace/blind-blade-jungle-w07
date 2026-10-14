@@ -350,11 +350,6 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
             _queuedOpeningAttack = true;
             return true;
         }
-        if (strike > 1 && _clock < _nextComboAllowedAt)
-        {
-            QueueAttack(false, false, false, _nextComboAllowedAt);
-            return true;
-        }
 
         _attackWasDrawn = _weaponState != KatanaWeaponState.Sheathed;
         _strike = strike;

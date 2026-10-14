@@ -1,5 +1,7 @@
 # 독백 UI
 
+> 2026-10-14 BambooDefense 리팩토링 S7 상태: **기존 모드 기록.** 대상 씬(Stage·Boss·MainMap·Stairwell·UIDesignTest)과 EndingMonologue는 삭제했다. UIManager 프리팹의 MonologueUI와 ExampleMonologue는 정식 빌드에 남아 있다. 복구는 [진행 문서](../plans/BambooDefense_refactoring_progress.md)의 S7 절을 따른다. 아래 내용은 삭제 전 기록이다.
+
 - 기능 설명: 협업자가 전달한 문구를 공통 Canvas에 표시하는 재사용 UI이다. 독백 발생 조건과 플레이어 입력 정책은 호출자가 결정한다.
 - 동작 조건 및 처리 흐름: Canvas를 포함한 UIManager.prefab을 씬에 미리 배치한다. 세션 초기화는 Canvas 하위 화면을 등록하고 숨긴다. Get<MonologueUI>()는 배치된 화면만 조회하며 생성하지 않는다. Show(message, isLastLine)는 본문과 삼각형 방향을 갱신하고 표시한다. SetText는 표시 상태를 유지하며 본문과 방향을 갱신한다. Hide는 숨김, Shutdown은 문구·표시 상태 정리만 수행하며 객체를 파괴하지 않는다.
 - 구현 상태: 정적 디자인과 다음/마지막 대사 표시 완료. 우하단 삼각형은 기본 오른쪽, isLastLine=true이면 아래쪽이다. 0.45초 간격으로 표시/숨김을 반복하며 unscaledDeltaTime을 사용한다. 타이핑·자동 종료·대사 큐·게임플레이 입력 제어는 제공하지 않는다. 편집 상태에서는 독백 화면이 활성·빈 본문이며 플레이 초기화 시 숨겨진다.

@@ -56,7 +56,6 @@ public sealed class PlayerActionDriver : MonoBehaviour
     private float _elapsed;
     private bool _impactSent;
     private bool _endSent;
-    private bool _useIaidoTimingForNextNormalAttack;
     private bool _sweepPending;
     private bool _sweepFinalSample;
     private bool _endPending;
@@ -105,12 +104,9 @@ public sealed class PlayerActionDriver : MonoBehaviour
             _elapsed = 0f;
             _impactSent = false;
             _endSent = false;
+            // 일반 공격의 시간 묶음은 시작 프레임의 연계·반격 상태로 고정한다.
             if (state == PlayerActionState.NormalAttack)
-            {
-                // 일반 공격의 시간 묶음은 시작 프레임의 연계·반격 상태로 고정한다.
-                _activeNormalAttackProfile = ResolveNormalAttackProfile(_useIaidoTimingForNextNormalAttack);
-                _useIaidoTimingForNextNormalAttack = false;
-            }
+                _activeNormalAttackProfile = ResolveNormalAttackProfile();
         }
 
         if (_endSent)
@@ -200,12 +196,6 @@ public sealed class PlayerActionDriver : MonoBehaviour
         CalculateStrikeWindow(impact, duration, window, out start, out end);
     }
 
-    /// <summary>다음 일반 공격을 1타·발도 시간 묶음으로 처리하도록 예약한다. 다음 일반 공격 시작 때 소비된다.</summary>
-    public void UseIaidoTimingForNextNormalAttack()
-    {
-        _useIaidoTimingForNextNormalAttack = true;
-    }
-
     /// <summary>actionId가 현재 진행 행동이면 게임 시간 경과를 반환한다. 아직 시작되지 않았거나 다른 행동이면 0을 반환한다.</summary>
     public float GetPresentationElapsed(int actionId)
     {
@@ -214,13 +204,13 @@ public sealed class PlayerActionDriver : MonoBehaviour
 
     /// <summary>
     /// 현재 연계·반격 상태로 일반 공격의 시간 묶음을 고른다.
-    /// 반격을 먼저 확인하고 forceIaidoTiming, 1타, 1타 시간을 쓰는 교체 2타 순서로 발도 시간을 선택해 반환한다.
+    /// 반격을 먼저 확인하고 1타, 1타 시간을 쓰는 교체 2타 순서로 발도 시간을 선택해 반환한다.
     /// </summary>
-    private AttackTimingProfile ResolveNormalAttackProfile(bool forceIaidoTiming)
+    private AttackTimingProfile ResolveNormalAttackProfile()
     {
         if (_combat != null && _combat.IsCounterAttack)
             return AttackTimingProfile.Counter;
-        if (forceIaidoTiming || _combat != null && (_combat.IsOpeningAttack || UsesOpeningTimingForSecondAttack()))
+        if (_combat != null && (_combat.IsOpeningAttack || UsesOpeningTimingForSecondAttack()))
             return AttackTimingProfile.Iaido;
         return AttackTimingProfile.Normal;
     }
@@ -236,7 +226,7 @@ public sealed class PlayerActionDriver : MonoBehaviour
     private AttackTimingProfile ResolvePresentationProfile(PlayerAttackKind kind)
     {
         return kind == PlayerAttackKind.IaidoFinisher
-            ? ResolveIaidoFinisherProfile() : ResolveNormalAttackProfile(false);
+            ? ResolveIaidoFinisherProfile() : ResolveNormalAttackProfile();
     }
 
     /// <summary>

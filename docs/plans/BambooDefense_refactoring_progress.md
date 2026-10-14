@@ -2,9 +2,10 @@
 
 ## 재개할 때 먼저 읽기
 
-- 최신 요청: 2026-10-14 사용자가 S5에 이어 **S6**을 진행하도록 요청했다. S7은 이번 실행 범위가 아니다.
+- 최신 요청: 2026-10-14 사용자가 **S7**을 진행하도록 요청했고, 정리 범위로 문서·작은 잔여물, 근거 있는 레거시 코드, 기존 모드 씬 14개, 서드파티 미사용 에셋을 모두 승인했다.
 - 계획: [BambooDefense 전환 리팩토링 계획](BambooDefense_전환_리팩토링_계획.md)
-- 현재 결과: **S6 완료.** Intro(빌드 0) 시작 → BambooDefense(빌드 1) → 게임오버 → 재도전. Windows 64비트 릴리스 빌드 성공·실행 확인, 개발 빌드에서 흐름 API 확인. **다음은 S7.** S1~S5 결과는 그대로 유지한다.
+- 현재 결과: **S0~S7 계획 단계 모두 완료.** S7 뒤 빌드 의존 에셋 745개 변화 없음, 컴파일 오류·경고 0, Editor 흐름과 Windows 릴리스 빌드 실행 확인. 남은 일은 아래 미확인 항목(실제 입력·화면·사운드 확인 등)과 사용자의 커밋이다.
+- S6 결과: Intro(빌드 0) 시작 → BambooDefense(빌드 1) → 게임오버 → 재도전. Windows 64비트 릴리스 빌드 성공·실행 확인, 개발 빌드에서 흐름 API 확인.
 - S5 결과: 컴파일 오류 0, API 시나리오 전후 동일, Stage_1·BossBattle 점검, 실제 방어 루프 20초 오류 0.
 - S1·S2 값 이전, S4 HUD 이전, S5 시간 정리를 다시 수행할 필요가 없다. 미확인은 아래 항목으로 별도 유지한다.
 - S5 시작 시 Editor 상태: PID 61860/port 7800, BambooDefense, **Play=false, paused=false, compiling=false, dirty=false**, Console 오류 0. HEAD는 `refs/heads/refactoring` = `fcf3caaa3374389da629137fa32cb64a8c9c73ad`(S1~S4 커밋 포함, 파일 직접 읽기). 단, 이 Editor는 체크아웃 전 상태를 들고 있었다(아래 `S5 중 확인한 Editor 상태 문제`).
@@ -27,7 +28,7 @@
 | S4 HUD 에셋 이전 | **완료** | 두 Canvas와 12개 마커를 프리팹으로 이전. 전조 길이 단일 입력. 화면비 3종·편집 프리뷰·재도전 확인 | 기존 외형과 게임 판정 보존 |
 | S5 공유 전투 정리 | **완료** | Driver 시간 묶음 단일화, Driver 런타임 폴더 이동(GUID 유지), Coordinator 연계 예약 설정·취소 단일화, 행동 원본·애니메이션 경계 문서화. API 시나리오 16종 전후 비교 | 실제 마우스·패드 전투 입력, 회복 중 예약 분기(현재 값으로 도달 불가), 돌진 이동 프레임 비결정성 원인 |
 | S6 정식 진입/빌드 | **완료** | IntroMenu 담당 1개로 정리·BambooDefense 연결, 빌드 목록 Intro·BambooDefense만 활성. 릴리스 빌드 성공(오류 0), 개발 빌드에서 시작·게임오버·재도전 2회 | 실제 마우스·패드 메뉴 조작, 릴리스 빌드의 화면·사운드 육안 확인 |
-| S7 에셋/문서 정리 | 미착수 | 게임 에셋 삭제 없음 | 정식 빌드 확인 후 후보별 근거 확보 |
+| S7 에셋/문서 정리 | **완료** | 문서 정리, 잔여 에셋 11·레거시 코드 2곳·고아 스크립트 15개, 기존 모드 씬 14개와 전용 에셋, 서드파티 미사용 1,831개(329MB) 정리. 모두 BeforeS7 사본 + OS 휴지통 | 빌드 의존 745개 동일, 시나리오 16종 동일, Editor 흐름·릴리스 빌드 실행 확인 |
 
 ## 확정한 제품 범위
 
@@ -216,7 +217,61 @@
 - 빌드 목록: `BeforeS6/ProjectSettings/EditorBuildSettings.asset`을 복사하거나 Stage_1·Stage_2·BossBattle 활성, BambooDefense 비활성으로 바꾼다.
 - 빌드 산출물 `Builds/BambooDefense-S6/`는 Git 제외 폴더이며 지워도 된다.
 
+## S7 에셋·레거시 코드·문서 정리
+
+### 판단 기준
+
+- 빌드 의존 범위(`s7-build-closure*.txt`): 활성 빌드 씬, 모든 `Resources`, `StreamingAssets`, `Plugins`, GraphicsSettings·QualitySettings 참조, 미리 로드 에셋, EditorBuildSettings 설정 객체에서 `AssetDatabase.GetDependencies(재귀)`로 계산했다. S7 전후 모두 745개이며 차이 0이다.
+- 에셋 삭제 조건: 빌드 의존 범위 밖이고, 남는 프로젝트 에셋에서 GUID로 참조되지 않으며, 코드·도구의 경로·이름 문자열(`Shader.Find`, `LoadAssetAtPath`, 씬 이름) 사용처가 없을 것.
+- 스크립트 삭제 조건: 남는 에셋의 GUID·UnityEvent 타입 이름 참조가 없고, 다른 코드가 타입 이름을 쓰지 않으며, `MenuItem`·`InitializeOnLoad`·`RuntimeInitializeOnLoadMethod`·에디터 창 같은 자동 진입점이 없을 것. 삭제 후 다시 검사해 더 이상 나오지 않을 때까지 반복했다.
+- 서드파티는 스크립트·asmdef·셰이더와 include(`.cginc`·`.hlsl`)·셰이더 그래프·라이선스/설명 문서를 남겼다. 셰이더 include는 GUID 의존으로 잡히지 않기 때문이다(IntroTextSlice가 TMP `TMPro_Properties.cginc`를 씀).
+- 모든 삭제는 파일과 .meta를 `BeforeS7/`에 같은 경로로 복사하고 GUID를 `s7-*-trashed.json`에 남긴 뒤 `AssetDatabase.MoveAssetsToTrash`로 OS 휴지통에 옮겼다. 커밋 `fcf3caa`에도 원본이 있다.
+
+### 작은 작업 현황
+
+| 작업 | 내용 | 근거 / 검증 |
+| --- | --- | --- |
+| S7-0 조사 | 빌드 밖 에셋 2,050개(340MB) 분류, 기존 모드 씬 14개·서드파티 데모 씬 38개, Resources 사용 현황 | `s7-outside-summary.txt`, `s7-nonbuild-scenes.txt`, `s7-resources-usage.txt` |
+| S7-1 문서 | FEATURE_SPEC의 깨진 `발자국_시스템.md` 링크를 감각 표현으로 연결, 빈 행 제거, 현재 기능/기존 모드 기록 분리, 미등록 명세 4개 등록. 인수인계 문서를 현재 읽기 안내로 다시 씀 | 원문 `BeforeS7/docs/` |
+| S7-2 잔여 에셋 | `Assets/Temp`(검증 캡처), FootstepTest 테스트 머티리얼 3, EffectTestInkBackdrop.mat, AlwaysVisibleOutlineMask.shader, Readme.asset·TutorialInfo, KatanaV2 PoseAligned 미사용 클립 2·컨트롤러 1, NewPlayerWeapon.controller, Pulse.wav | 각 GUID 참조 0, 이름 문자열 0. `s7-small-trashed.json` |
+| S7-3a 레거시 코드 | `PlayerActionDriver.UseIaidoTimingForNextNormalAttack`와 플래그, Coordinator의 도달 불가 연계 분기 제거 | 시나리오 16종·432조합이 S5-3 결과와 동일(`s7-3-*.txt`) |
+| S7-4 기존 모드 씬 | Build(Stage_1~3, BossBattle, TwinBossBattle), Map(MainMap, Stairwell, Stairwell_1, NavMesh), LevelDesign_HP(Stage_Test, NavMesh 6), TestScene 3, TutoScene, EndingScene, Tutorial 머티리얼·NavMesh, Scenes 루트의 NavMesh 4, EndingMonologue. 빌드 목록에서 삭제·누락 씬 항목 7개 제거 | 대상 폴더에 빌드 의존 파일 없음 확인, 남는 코드의 씬 이름 문자열 없음. `s7-oldscenes-trashed.json` |
+| S7-3b 고아 스크립트 | 1차 13개(BossBattleHitEffects, EffectTestSword, FootstepTestDriver, CoroutineHelper, `Managers/InputManager.cs`의 PlayerInputController, BossRoomAudio, BossSceneExit, NextSceneTrigger, StageDoor, StairwellMusic, EndingSceneController, PlayerHealthBar, PlayerStaminaBar), 2차 2개(PlayerStamina, SceneTransitionFade), 비게 된 폴더 3개 | 3차 검사에서 에디터 도구 2개 외 후보 없음. 컴파일 오류·경고 0 |
+| S7-5 서드파티 | Epic Toon FX 1,511, Eric VFX Studio 141, Free Slash VFX 68, Shurikens pack 111 = 1,831개(329MB)와 빈 폴더 89개 | 남은 서드파티 116개. `s7-thirdparty-delete.txt`, `-keep.txt`, `-empty-folders.txt` |
+
+### 사고와 복구
+
+- S7-2에서 `Assets/Materials/FootstepTest` 폴더를 통째로 옮기면서 빌드가 쓰는 `Sprite.mat`(GUID `d9859716a952461db94ff1cc2aacb654`)도 함께 옮겼다. 후보 목록에는 없던 파일이다. Missing 검사에서 Footstep·Wave·EnemyProjectile_Basic 프리팹의 머티리얼 참조가 끊긴 것을 발견하고 `BeforeS7`에서 폴더 .meta와 함께 같은 GUID로 복원했다. 복원 후 Footstep 프리팹이 Sprite를 다시 참조하고, 삭제 파일 전체를 빌드 의존 목록과 대조해 다른 사례가 없음을 확인했다. 그 사이 빌드·저장은 하지 않았다.
+- 이후 폴더 단위 삭제는 폴더 안 파일을 빌드 의존 목록과 먼저 대조한 뒤 수행했다.
+
+### 남긴 것과 이유
+
+- `PlayerAnimationEventRelay`: 행동 ID 추적으로 한 번 더 거르는 동작이 있어 직접 호출로 바꾸면 경계 동작이 달라질 수 있다.
+- 보스·쌍둥이 보스 코드와 `Resources/Enemies`·`Resources/Prefabs`의 기존 모드 프리팹: 공용 전투 코드(R12의 `BossController` 의존)와 Resources 경로 로드 때문에 남겼다. Resources 안에 있어 빌드에 포함된다. `Resources/Prefabs` 110개 중 정식 씬에서 직접 닿는 것은 13개다. 줄이려면 코드의 경로 로드와 보스 의존을 먼저 정리해야 한다.
+- `GameSceneInitializer`가 참조하는 입력 어댑터(R11)·`CorridorRoundController`·`TutorialGuide.cs`: 코드 참조가 있어 남겼다.
+- 원래부터 비어 있던 폴더(`Art`, `TextMesh Pro`, `Editor/Maps`, `Resources/Manager`, `Settings/Sensory`)는 다른 도구가 경로를 기대할 수 있어 남겼다.
+- `ProBuilder Data/Default Material Palette.asset`, `Editor/SoundControlWindow.uss`: 에디터 도구가 쓴다.
+
+### 검증
+
+- 빌드 의존 범위: 745개 동일. 남은 빌드 밖 에셋 158개(4MB: 스크립트·셰이더·에디터 도구·라이선스).
+- Missing 검사(`s7-missing-check.txt`): 남은 Missing 참조 13건은 모두 S7 이전부터 있던 것이다. 참조 GUID가 S7에서 지운 1,914개 GUID에 없다. `KatanaV2_Responsive.controller`의 Player@Guard 모션, Free Slash VFX `Flying Particles.mat` 텍스처 1, `PC_Renderer.asset`의 프로브 볼륨 디버그 리소스 7이 해당한다. `DefaultVolumeProfile`의 null 하위 객체도 기존 상태다.
+- 컴파일: 오류 0, 경고 0(기존 CS0414 경고도 이번 재컴파일 출력에는 없었다).
+- API 시나리오 16종·432조합: S5-3 결과와 동일.
+- Editor Play(`s7-editor-flow.txt`): Intro 시작 → BambooDefense → 게임오버 → 재도전 2회, Console 오류·경고 0.
+- Windows 릴리스 빌드(`Builds/BambooDefense-S7/Release/`, `s7-release-build-report.json`): 성공, 오류 0·경고 21, 153.29MB. 20초 실행 로그 예외 0(`s7-release-player.log`). 빌드 크기는 Resources 구성이 같아 거의 그대로다.
+- 이 Unity 버전은 **빌드할 때마다** `ProjectSettings.asset`의 `m_BuildTargetBatching`에 Standalone(정적 1·동적 0) 항목을 추가한다(S6 개발 빌드와 S7 릴리스 빌드 모두). 작업 트리를 커밋 내용과 같게 두려고 이번에도 항목을 지웠다. 이후 빌드하면 같은 3줄 차이가 다시 생긴다.
+- 개발 빌드 API 흐름은 S7 뒤 다시 하지 않았다. 빌드 의존 에셋이 같고 Editor 흐름과 릴리스 실행을 확인했다.
+
+### 되돌리기
+
+- 특정 항목: `s7-<묶음>-trashed.json`에서 경로·GUID를 찾아 `BeforeS7/`의 파일과 .meta를 같은 경로로 복사하고 Refresh한다. OS 휴지통에서도 복원할 수 있다.
+- 전체: `BeforeS7/Assets` 아래 전부를 프로젝트 `Assets`에 복사하고(덮어쓰기 대상은 Driver 1개), `BeforeS7/ProjectSettings/EditorBuildSettings.asset`을 복사한 뒤 컴파일한다. 문서는 `BeforeS7/docs/`.
+- Coordinator 도달 불가 분기 복구: `RequestAttack`에서 `BeginSheathe(); _queuedOpeningAttack = true; return true; }` 블록 바로 뒤에 `if (strike > 1 && _clock < _nextComboAllowedAt) { QueueAttack(false, false, false, _nextComboAllowedAt); return true; }`를 다시 넣는다.
+
 ## 변경 파일
+
+S7(미커밋): 위 S7 표의 삭제 대상, `Assets/Scripts/Player/PlayerActionDriver.cs`, `Assets/Scripts/Player/KatanaV2/KatanaCombatCoordinator.cs`, `ProjectSettings/EditorBuildSettings.asset`, `docs/FEATURE_SPEC.md`, `docs/features/`의 인수인계·카타나 전투 V2·대숲 방어·인트로 메뉴·감각 표현·이펙트 시스템과 기존 모드 명세 11개의 상태 줄, 이 문서와 계획서 상태 줄.
 
 S6(미커밋):
 
@@ -271,6 +326,11 @@ S1~S4(참고):
 | s6-release-build-report.json / s6-release-player.log | 릴리스 빌드 보고서와 실행 로그 |
 | s6-dev-player-flow.txt / s6-dev-player.log | 개발 빌드 런타임 API 흐름과 플레이어 로그 |
 | git-fcf3caa/ | `.git` 객체에서 꺼낸 커밋본 ProjectSettings·GraphicsSettings·EditorBuildSettings(비교용) |
+| BeforeS7/ | S7에서 지운 모든 파일·.meta와 문서·설정 사본(3,849개, 338MB), 수정 전 Driver, 문서·빌드 설정 사본 |
+| s7-*-trashed.json | 묶음별(small, oldscenes, scripts1, scripts2, thirdparty) 삭제 경로·GUID·파일 수 |
+| s7-build-closure(-before/-after).txt, s7-outside-*.txt | 빌드 의존 범위와 범위 밖 목록(전후) |
+| s7-thirdparty-delete/keep/empty-folders.txt, s7-orphan-scripts.txt, s7-missing-check.txt | 서드파티 판정, 고아 스크립트, Missing 검사 |
+| s7-3-*.txt, s7-editor-flow.txt, s7-release-* | S7 뒤 시나리오·흐름·빌드 근거 |
 
 - 최초 기준 커밋: `a7b646ca3ded556de516c0fd3f4466ee96490782`(refs 직접 읽기). 미커밋 원본은 Baseline 사본이 기준이다.
 - S4 직전의 코드·.meta·씬 29개를 BeforeS4에 복사했다. 이 폴더는 문서 사본을 포함하지 않는다.
@@ -313,8 +373,8 @@ S1~S4(참고):
 
 ## 다른 터미널에서 재개하는 순서
 
-1. 이 문서, AGENTS.md, FEATURE_SPEC.md, 대숲 방어 명세, 카타나 전투 V2 맨 앞의 현재 계약, 계획의 S7을 읽는다. 다음 단계 요청을 확인한 뒤 진행한다. 이번 요청은 S6에서 끝났다.
-2. .git/HEAD를 직접 읽고 브랜치 규칙을 따른다. 현재 refactoring에서는 Git CLI를 사용하지 않는다. S5·S6 변경은 미커밋이므로 사용자가 커밋했는지 refs·작업 트리 파일로 확인한다.
+1. 이 문서, AGENTS.md, FEATURE_SPEC.md, 대숲 방어 명세, 카타나 전투 V2 맨 앞의 현재 계약을 읽는다. 계획 단계 S0~S7은 끝났으므로 새 요청을 확인한 뒤 진행한다.
+2. .git/HEAD를 직접 읽고 브랜치 규칙을 따른다. 현재 refactoring에서는 Git CLI를 사용하지 않는다. S5·S6·S7 변경은 미커밋이므로 사용자가 커밋했는지 refs·작업 트리 파일로 확인한다. S7은 삭제가 많으므로 커밋 전에 Git 변경 목록이 `s7-*-trashed.json`과 맞는지 보는 것이 좋다.
 3. Unity 연결과 active scene/dirty/Play를 읽기 전용으로 확인한다. Editor를 켠 채 브랜치·pull이 있었다면 Refresh와 컴파일을 먼저 끝내고, dirty=false를 확인한 뒤 열린 씬을 디스크에서 다시 연다. 씬을 재생성하지 않는다.
 4. S7 전에 S6 빌드(`Builds/BambooDefense-S6/Release/week06-blindblade.exe`)로 사람이 메뉴→전투→게임오버→재도전을 직접 해 보면 실제 입력·화면·사운드 미확인을 줄일 수 있다. S7 후보 정리 뒤에는 같은 방식으로 다시 빌드한다. 개발 빌드 API 확인이 필요하면 `RuntimePipelineConfig.json`을 임시로 만들고, 끝나면 이 문서의 S6 절처럼 ProjectSettings를 커밋 내용과 비교해 되돌린다.
 5. S7은 빌드 검증 뒤 참조/문자열/Resources/제작 도구 근거가 있는 후보만 정리한다. S5에서 기록한 후보: `PlayerAnimationEventRelay`(Animation Event 없음, Driver만 호출), `PlayerActionDriver.UseIaidoTimingForNextNormalAttack`(호출처 없음), Coordinator의 도달하지 않는 이른 연계 분기, `플레이어_시스템_인수인계.md`의 다른 프로젝트 절대 경로. 각 작은 작업 직후 이 문서를 갱신한다.
@@ -348,6 +408,8 @@ $unityCli = 'C:/Program Files/Unity Hub/resources/cli/unity.exe'
 - Console 누적 기록에는 S5 이전부터 있던 `t.GetParent() == nullptr` Assertion 5건과 MCP 패키지 잔여 경고, Editor 상태 문제 중의 Director 초기화 오류·HUD NullReference, BossBattle 종료 오류가 남아 있다. 콘솔을 지우지 않았다.
 - 씬·프리팹은 저장하지 않았고 BambooDefense를 dirty=false로 다시 열어 둔 상태다. 게임 에셋 삭제·빌드·Git CLI는 수행하지 않았다.
 
-> (S6 이후) `docs/plans/BambooDefense_refactoring_progress.md`를 먼저 읽고 S7부터 이어서 작업해 주세요. S6에서 Intro → BambooDefense → 게임오버 → 재도전을 정식 경로로 연결했고, Windows 릴리스 빌드 성공과 개발 빌드 API 흐름 확인을 마쳤습니다. 기존 Stage·Boss 씬은 빌드 목록에서만 비활성이며 파일은 남아 있습니다. S5·S6 변경은 미커밋입니다. S7은 참조·문자열·Resources·제작 도구 근거가 있는 후보만 정리하고, 정리 묶음마다 컴파일·Play·빌드로 확인해 주세요. 실제 입력·화면·사운드 확인은 미확인 항목으로 유지해 주세요.
+> (S7 이후) `docs/plans/BambooDefense_refactoring_progress.md`를 먼저 읽어 주세요. BambooDefense 전환 리팩토링 계획 S0~S7이 끝났습니다. 정식 경로는 Intro → BambooDefense → 게임오버 → 재도전이고, 기존 모드 씬·미사용 서드파티 에셋은 S7에서 정리했습니다(BeforeS7 사본·OS 휴지통·커밋 fcf3caa로 복구 가능). S5~S7 변경은 미커밋입니다. 남은 확인은 실제 입력·화면·사운드, S2 자연 근접 재사용, Play 종료 시 수리검 MissingReference, Resources의 기존 모드 프리팹 정리(보스 의존 정리 선행)입니다. refactoring 브랜치에서는 Git CLI·커밋을 하지 않습니다.
+>
+> (S6 이후 기록) `docs/plans/BambooDefense_refactoring_progress.md`를 먼저 읽고 S7부터 이어서 작업해 주세요. S6에서 Intro → BambooDefense → 게임오버 → 재도전을 정식 경로로 연결했고, Windows 릴리스 빌드 성공과 개발 빌드 API 흐름 확인을 마쳤습니다. 기존 Stage·Boss 씬은 빌드 목록에서만 비활성이며 파일은 남아 있습니다. S5·S6 변경은 미커밋입니다. S7은 참조·문자열·Resources·제작 도구 근거가 있는 후보만 정리하고, 정리 묶음마다 컴파일·Play·빌드로 확인해 주세요. 실제 입력·화면·사운드 확인은 미확인 항목으로 유지해 주세요.
 >
 > (S5 이후 기록) `docs/plans/BambooDefense_refactoring_progress.md`를 먼저 읽고 S6부터 이어서 작업해 주세요. S5(Driver 시간 묶음 단일화·런타임 폴더 이동, Coordinator 연계 예약 정리, 전투 경계 문서화)는 API 시나리오 전후 비교로 끝났고 변경은 아직 커밋되지 않았습니다. S1/S2 스폰 값, S4 HUD, S5 시간 정리를 다시 하지 마세요. 실제 입력·빌드 검증과 S2 자연 근접 재사용 관찰은 미확인 항목으로 유지해 주세요. Editor를 켠 채 브랜치를 바꿨다면 컴파일 후 열린 씬을 디스크에서 다시 연 뒤 시작하세요. 현재 refactoring 브랜치에서는 Git CLI·커밋을 하지 않습니다.
