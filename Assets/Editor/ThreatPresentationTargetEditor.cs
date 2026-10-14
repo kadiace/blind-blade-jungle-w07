@@ -41,7 +41,7 @@ public sealed class ThreatPresentationTargetEditor : Editor
             EditorGUILayout.ColorField("표시 색상", snapshot.Color);
             EditorGUILayout.FloatField("표시 투명도", snapshot.Alpha);
         }
-        EditorGUILayout.HelpBox("첫 단위는 표시 결과 계산까지 구현합니다. 실제 윤곽선 색상·숨김과 HUD 연결은 다음 단위입니다.", MessageType.Info);
+        EditorGUILayout.HelpBox("Play의 연결된 게임 카메라는 이 결과로 윤곽선 색상·숨김을 적용합니다. Scene View는 원본 외형을 유지하고 HUD 연결은 별도입니다.", MessageType.Info);
     }
 
     /// <summary>입력 없이 Play 중인지 반환해 실행 중 Inspector 진단을 지속 갱신한다.</summary>

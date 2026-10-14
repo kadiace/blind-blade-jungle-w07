@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 using UnityEngine;
 
 namespace BlindBlade.Perception
@@ -26,6 +29,7 @@ namespace BlindBlade.Perception
         private float _runtimeRadius;
 
         public ThreatPresentationResolver Resolver => _resolver;
+        public IReadOnlyList<Renderer> Renderers => _renderers ?? Array.Empty<Renderer>();
         public ThreatPresentationSnapshot Snapshot { get; private set; }
 
         void OnEnable()

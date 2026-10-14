@@ -15,6 +15,7 @@ public static class ThreatPresentationAuthoring
     private const string SCENE_PATH = ROOT_PATH + "/C_ThreatPresentation.unity";
     private const string MELEE_PATH = ROOT_PATH + "/ThreatPreviewMelee.prefab";
     private const string PROJECTILE_PATH = ROOT_PATH + "/ThreatPreviewProjectile.prefab";
+    private const string SURFACE_PATH = ROOT_PATH + "/ThreatPreviewSurface.mat";
 
     /// <summary>
     /// 메뉴 또는 Unity CLI 입력 없이 C의 설정·전용 프리팹·작업 씬을 생성하고 연다.
@@ -23,6 +24,11 @@ public static class ThreatPresentationAuthoring
     [MenuItem("Tools/Perception/Open or Create C Threat Sandbox")]
     public static void OpenOrCreateSandbox()
     {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogWarning("C 작업 씬은 Play를 종료한 뒤 여세요. 현재 씬에서는 대상을 바로 선택해 확인할 수 있습니다.");
+            return;
+        }
         if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             return;
         Directory.CreateDirectory("Assets/Settings/Perception");
@@ -34,6 +40,7 @@ public static class ThreatPresentationAuthoring
             settings = ScriptableObject.CreateInstance<ThreatPresentationSettings>();
             AssetDatabase.CreateAsset(settings, SETTINGS_PATH);
         }
+        CreatePreviewMaterial();
         CreatePreviewPrefab(MELEE_PATH, PrimitiveType.Capsule, ThreatTargetKind.Melee);
         CreatePreviewPrefab(PROJECTILE_PATH, PrimitiveType.Sphere, ThreatTargetKind.Projectile);
         if (File.Exists(SCENE_PATH))
@@ -85,6 +92,7 @@ public static class ThreatPresentationAuthoring
         if (File.Exists(path))
             return;
         GameObject root = GameObject.CreatePrimitive(primitive);
+        root.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(SURFACE_PATH);
         root.name = Path.GetFileNameWithoutExtension(path);
         root.SetActive(false);
         ThreatPresentationTarget targetComponent = root.AddComponent<ThreatPresentationTarget>();
@@ -120,5 +128,75 @@ public static class ThreatPresentationAuthoring
         data.ApplyModifiedPropertiesWithoutUndo();
         root.SetActive(true);
         resolver.RefreshTarget(targetComponent);
+    }
+
+    /// <summary>
+    /// 전용 씬의 기존 배치를 유지하면서 경계·겹침·벽 뒤 표시용 대상을 추가하고 저장한다.
+    /// 메뉴 또는 Unity CLI에서 호출하며 정식 게임 씬·Renderer 설정·원본 프리팹은 변경하지 않는다.
+    /// </summary>
+    [MenuItem("Tools/Perception/Add Rendering Preview Cases")]
+    public static void AddRenderingPreviewCases()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogError("렌더링 미리보기 배치는 Play를 종료한 뒤 실행하세요.");
+            return;
+        }
+        if (EditorSceneManager.GetActiveScene().path != SCENE_PATH)
+        {
+            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                return;
+            EditorSceneManager.OpenScene(SCENE_PATH);
+        }
+        GameObject presentation = FindPreviewRoot("ThreatPresentation");
+        if (presentation == null)
+        {
+            Debug.LogError("전용 씬의 ThreatPresentation 오브젝트를 확인하세요.");
+            return;
+        }
+        CreatePreviewMaterial();
+        ThreatPresentationResolver resolver = presentation.GetComponent<ThreatPresentationResolver>();
+        CreateRenderingTarget("Rendering_Boundary", new Vector3(-4f, 1.6f, Mathf.Sqrt(11.5f * 11.5f - 16f)), resolver);
+        CreateRenderingTarget("Rendering_NearOverlap", new Vector3(1.5f, 1.6f, 2f), resolver);
+        CreateRenderingTarget("Rendering_FarOverlap", new Vector3(9f, 1.6f, 12f), resolver, 18f);
+        CreateRenderingTarget("Rendering_BehindWall", new Vector3(-7f, 1.6f, 15f), resolver, 20f);
+        if (FindPreviewRoot("Rendering_Wall") == null)
+        {
+            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wall.name = "Rendering_Wall";
+            wall.transform.position = new Vector3(-3.5f, 1.6f, 7.5f);
+            wall.transform.localScale = new Vector3(2f, 4f, 0.3f);
+            wall.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(SURFACE_PATH);
+            wall.AddComponent<OutlineLayer>();
+        }
+        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), SCENE_PATH);
+        AssetDatabase.SaveAssets();
+        Debug.Log("C 위협 렌더링 미리보기 배치 완료: " + SCENE_PATH);
+    }
+
+    /// <summary>name의 미리보기 루트가 없을 때 position·resolver·radius로 대상을 생성해 기존 편집값을 보존한다.</summary>
+    private static void CreateRenderingTarget(string name, Vector3 position, ThreatPresentationResolver resolver, float radius = -1f)
+    {
+        if (FindPreviewRoot(name) == null)
+            CreateTarget(name, position, resolver, radius: radius);
+    }
+
+    /// <summary>현재 전용 씬의 루트 이름을 name과 비교해 해당 오브젝트 또는 null을 반환한다.</summary>
+    private static GameObject FindPreviewRoot(string name)
+    {
+        foreach (GameObject root in EditorSceneManager.GetActiveScene().GetRootGameObjects())
+            if (root.name == name)
+                return root;
+        return null;
+    }
+
+    /// <summary>전용 미리보기 표면 재질이 없으면 URP Unlit 회색 재질을 생성하고 기존 에셋은 유지한다.</summary>
+    private static void CreatePreviewMaterial()
+    {
+        if (AssetDatabase.LoadAssetAtPath<Material>(SURFACE_PATH) != null)
+            return;
+        Material material = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { name = "ThreatPreviewSurface" };
+        material.SetColor("_BaseColor", new Color(0.5f, 0.5f, 0.5f, 1f));
+        AssetDatabase.CreateAsset(material, SURFACE_PATH);
     }
 }

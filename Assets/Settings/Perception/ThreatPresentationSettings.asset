@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 947f2dc017cbb487ccb77293b806760f, type: 3}
   m_Name: ThreatPresentationSettings
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   _defaultEnemyRadius: 12
   _enemyEdgeFade: 1
   _overrideNormalRadius: 0
@@ -47,5 +47,5 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   _reflectedColor: {r: 1, g: 1, b: 1, a: 1}
-  _fillOpacity: 0.6
+  _fillOpacity: 0
   _viewportExitMargin: 0.02

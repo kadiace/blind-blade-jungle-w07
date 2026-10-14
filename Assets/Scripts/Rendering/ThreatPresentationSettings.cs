@@ -23,7 +23,7 @@ namespace BlindBlade.Perception
         [SerializeField, Tooltip("가로축은 근접도(먼 거리 0, 가까운 거리 1), 세로축은 붉은색 혼합 비율이다.")]
         private AnimationCurve _colorCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
         [SerializeField] private Color _reflectedColor = Color.white;
-        [SerializeField, Range(0f, 1f)] private float _fillOpacity = 0.6f;
+        [SerializeField, Range(0f, 1f)] private float _fillOpacity = 0f;
 
         [Header("화면 경계 전환")]
         [SerializeField, Range(0f, 0.25f), Tooltip("화면 밖으로 이 비율만큼 더 벗어나면 방향 UI로 전환한다. 0.02는 폭·높이의 2%다.")]
