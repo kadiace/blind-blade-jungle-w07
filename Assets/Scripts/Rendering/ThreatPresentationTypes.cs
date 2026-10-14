@@ -7,10 +7,11 @@ namespace BlindBlade.Perception
     public enum ThreatOwnership { Hostile, Reflected }
     public enum ThreatRadiusSource { Default, Type, Individual, Runtime }
 
-    /// <summary>B의 대상 정보를 연결하기 위한 C 전용 임시 입력이다. 공식 계약이 배포되면 어댑터에서 변환한다.</summary>
+    /// <summary>B의 대상 정보를 연결하는 C 입력이다. EntityId로 공통 계약의 문자열 식별자를 보존한다.</summary>
     public readonly struct ThreatSourceState
     {
         public int TargetId { get; }
+        public string EntityId { get; }
         public int SpawnGeneration { get; }
         public ThreatTargetKind Kind { get; }
         public MeleeThreatType MeleeType { get; }
@@ -20,12 +21,13 @@ namespace BlindBlade.Perception
 
         /// <summary>
         /// targetId와 spawnGeneration으로 생명을 식별하고 kind·meleeType·ownership·통과·활성 상태를 저장한다.
-        /// Unity 참조가 없는 불변 표시 입력을 생성하며 전투 상태는 변경하지 않는다.
+        /// entityId는 공통 계약으로 전달할 원본 문자열이며 Unity 참조나 전투 상태는 변경하지 않는다.
         /// </summary>
         public ThreatSourceState(int targetId, int spawnGeneration, ThreatTargetKind kind,
-            MeleeThreatType meleeType, ThreatOwnership ownership, bool hasPassedPlayer, bool isActive)
+            MeleeThreatType meleeType, ThreatOwnership ownership, bool hasPassedPlayer, bool isActive, string entityId = null)
         {
             TargetId = targetId;
+            EntityId = entityId;
             SpawnGeneration = spawnGeneration;
             Kind = kind;
             MeleeType = meleeType;
@@ -35,10 +37,12 @@ namespace BlindBlade.Perception
         }
     }
 
-    /// <summary>D가 재판정 없이 소비할 수 있는 C 전용 임시 표시 결과다. Alpha는 Color와 별도로 한 번 적용한다.</summary>
+    /// <summary>C의 렌더링·Inspector용 내부 표시 결과다. 외부 전달은 공통 계약 어댑터가 담당한다.</summary>
     public readonly struct ThreatPresentationSnapshot
     {
         public int TargetId { get; }
+        public string EntityId { get; }
+        public bool IsActive { get; }
         public int SpawnGeneration { get; }
         public ThreatTargetKind Kind { get; }
         public Vector3 Position { get; }
@@ -63,6 +67,8 @@ namespace BlindBlade.Perception
             bool isInCamera, float directionDegrees, Color color, float alpha)
         {
             TargetId = source.TargetId;
+            EntityId = source.EntityId;
+            IsActive = source.IsActive;
             SpawnGeneration = source.SpawnGeneration;
             Kind = source.Kind;
             Position = position;

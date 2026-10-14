@@ -24,6 +24,7 @@
 - 사용자가 HP·스태미너·발소리 HUD 구현과 나중에 이미지만 교체 가능한 구성을 요청했다. 다른 작업자의 새 구현과 충돌하는 공급자는 현재 발견되지 않았다.
 - 스태미너 담당자는 `BlindBlade.Combat.Contracts.IPlayerStaminaReadModel`의 `Current`와 `Changed`를 구현한다. 같은 Player에 붙이면 HUD가 바인딩할 때 한 번 찾는다. 다른 오브젝트라면 씬의 CombatPlayerHud / Stamina Source에 연결한다. 실행 중 공급자를 추가·교체할 때는 `BindSources(health, source)`로 즉시 다시 연결한다.
 - 발소리 HUD는 `Origin`이나 적 Transform을 추적하지 않는다. C의 UiDirection·Proximity·Color·Alpha를 적용하고, WorldVisible이면 UiVisible=false인 기존 정책을 따른다. 세션·Target·Revision으로 이전 표시 갱신을 거부한다.
+- 방향 HUD의 공급자에 C 공통 결과 어댑터를 연결하면 C의 표시 규칙을 사용한다. WorldVisible로 전환할 때 방향 마커를 즉시 숨기며 다른 종료의 기존 페이드는 유지한다. 발소리 HUD·마커 풀은 이번 연결에서 변경하지 않았다. C 전용 씬의 공통 값 전달은 사용자 확인했고, 정식 HUD의 실제 화면 전환은 B/월드 연결 이후 확인한다.
 - 풀은 HUD 프리팹에 미리 직렬화한 마커 24개를 재사용한다. 런타임 Instantiate는 없다. 빈 슬롯이 없으면 추가 표시는 생략하고 종료·숨김으로 슬롯을 반환한다. 비활성/재활성 시 구독과 초기 스냅샷을 다시 연결하며 풀을 재생성하지 않는다.
 
 #### Inspector 설정과 이미지 교체

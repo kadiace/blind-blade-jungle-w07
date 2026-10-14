@@ -77,9 +77,15 @@ namespace BlindBlade.Perception
         /// </summary>
         public Color GetDistanceColor(float distance)
         {
-            float closeness = 1f - Mathf.InverseLerp(_nearColorDistance, _farColorDistance, distance);
+            float closeness = GetProximity(distance);
             float blend = Mathf.Clamp01(_colorCurve.Evaluate(closeness));
             return Color.Lerp(_farColor, _nearColor, blend);
+        }
+
+        /// <summary>수평 distance를 공통 색상 거리 구간에 대조해 가까울수록 1인 HUD 근접도를 반환한다.</summary>
+        public float GetProximity(float distance)
+        {
+            return 1f - Mathf.InverseLerp(_nearColorDistance, _farColorDistance, distance);
         }
     }
 }

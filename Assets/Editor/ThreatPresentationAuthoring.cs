@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
+using BlindBlade.Combat.Contracts;
 using BlindBlade.Perception;
 
 /// <summary>C 전용 인지 설정·프리팹·작업 씬을 생성한다. 정식 게임 씬이나 프리팹을 저장하지 않는다.</summary>
@@ -198,5 +199,65 @@ public static class ThreatPresentationAuthoring
         Material material = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { name = "ThreatPreviewSurface" };
         material.SetColor("_BaseColor", new Color(0.5f, 0.5f, 0.5f, 1f));
         AssetDatabase.CreateAsset(material, SURFACE_PATH);
+    }
+
+    /// <summary>편집 중인 C 전용 씬에 공통 어댑터·D 공급자·세션 참조를 연결하고 현재 배치를 저장한다.</summary>
+    [MenuItem("Tools/Perception/Add Common Contract Preview")]
+    public static void AddCommonContractPreview()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorSceneManager.GetActiveScene().path != SCENE_PATH)
+        {
+            Debug.LogWarning("Play를 종료하고 C Threat Sandbox 씬에서 공통 계약 미리보기를 추가하세요.");
+            return;
+        }
+        GameObject root = FindPreviewRoot("ThreatPresentation");
+        if (root == null)
+        {
+            Debug.LogError("C 전용 씬의 ThreatPresentation 루트를 확인하세요.");
+            return;
+        }
+        CombatSessionRuntime runtime = root.GetComponent<CombatSessionRuntime>();
+        if (runtime == null)
+            runtime = Undo.AddComponent<CombatSessionRuntime>(root);
+        ThreatPresentationContractAdapter adapter = root.GetComponent<ThreatPresentationContractAdapter>();
+        if (adapter == null)
+            adapter = Undo.AddComponent<ThreatPresentationContractAdapter>(root);
+        CombatThreatPresentationProvider provider = root.GetComponent<CombatThreatPresentationProvider>();
+        if (provider == null)
+            provider = Undo.AddComponent<CombatThreatPresentationProvider>(root);
+        SerializedObject adapterData = new SerializedObject(adapter);
+        adapterData.FindProperty("_resolver").objectReferenceValue = root.GetComponent<ThreatPresentationResolver>();
+        adapterData.FindProperty("_sessionRuntime").objectReferenceValue = runtime;
+        adapterData.ApplyModifiedProperties();
+        SerializedObject providerData = new SerializedObject(provider);
+        providerData.FindProperty("_threatPresentationSource").objectReferenceValue = adapter;
+        providerData.ApplyModifiedProperties();
+        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), SCENE_PATH);
+        Selection.activeGameObject = root;
+        Debug.Log("C 공통 계약 미리보기 연결 완료. Play 후 Tools/Perception/Start C Contract Preview Session을 실행하세요.");
+    }
+
+    /// <summary>Play 중 C 전용 씬의 D 세션을 시작하거나 재시작한다. 정식 게임의 시간·씬은 변경하지 않는다.</summary>
+    [MenuItem("Tools/Perception/Start C Contract Preview Session")]
+    public static void StartCommonContractPreviewSession()
+    {
+        if (!EditorApplication.isPlaying || EditorSceneManager.GetActiveScene().path != SCENE_PATH)
+        {
+            Debug.LogWarning("공통 계약 세션 시작은 C Threat Sandbox를 Play한 상태에서 실행하세요.");
+            return;
+        }
+        GameObject root = FindPreviewRoot("ThreatPresentation");
+        CombatSessionRuntime runtime = root != null ? root.GetComponent<CombatSessionRuntime>() : null;
+        if (runtime == null)
+        {
+            Debug.LogError("Play 종료 후 Add Common Contract Preview로 먼저 연결하세요.");
+            return;
+        }
+        runtime.Initialize();
+        ThreatPresentationResolver resolver = root.GetComponent<ThreatPresentationResolver>();
+        resolver.BeginSession(resolver.Observer, resolver.ViewCamera);
+        resolver.ResolveNow();
+        Selection.activeGameObject = root;
+        Debug.Log("C 공통 계약 미리보기 세션 시작: " + runtime.Session.SessionId);
     }
 }

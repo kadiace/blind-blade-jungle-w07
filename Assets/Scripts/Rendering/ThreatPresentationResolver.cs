@@ -21,6 +21,7 @@ namespace BlindBlade.Perception
         public ThreatPresentationSettings Settings => _settings;
         public Transform Observer => _observer;
         public Camera ViewCamera => _viewCamera;
+        public bool IsSessionActive => _sessionActive;
         public IReadOnlyList<ThreatPresentationSnapshot> Snapshots => _snapshots;
 
         void OnEnable()

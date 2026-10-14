@@ -244,6 +244,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3001}
   - component: {fileID: 3002}
+  - component: {fileID: 3005}
+  - component: {fileID: 3004}
+  - component: {fileID: 3003}
   m_Layer: 0
   m_Name: ThreatPresentation
   m_TagString: Untagged
@@ -281,6 +284,56 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 30bbc53a37dc859dad89d4d5d6675020, type: 2}
   _observer: {fileID: 1001}
   _viewCamera: {fileID: 2002}
+--- !u!114 &3003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b07df9fafec985e4bb7b581b0e93f21c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatThreatPresentationProvider
+  _threatPresentationSource: {fileID: 3004}
+  _visibilityThreshold: 0
+  _nearDistance: 4
+  _farDistance: 30
+  _perceivedThreatColor: {r: 1, g: 1, b: 1, a: 1}
+  _concealedThreatColor: {r: 1, g: 0.55, b: 0.2, a: 1}
+  _perceivedThreatAlpha: 0.7
+  _concealedThreatAlpha: 1
+  _footstepLifetime: 2
+  _footstepFadeDuration: 0.5
+  _footstepRefreshInterval: 0.5
+--- !u!114 &3004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df73cbb42dc04d009b3920e1f8bbb659, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlindBlade.Perception.ThreatPresentationContractAdapter
+  _resolver: {fileID: 3002}
+  _sessionRuntime: {fileID: 3005}
+--- !u!114 &3005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b02ba2816b599574598a99b05027598d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlindBlade.Combat.Contracts.CombatSessionRuntime
+  _defaultTimeScale: 1
 --- !u!1001 &5000
 PrefabInstance:
   m_ObjectHideFlags: 0

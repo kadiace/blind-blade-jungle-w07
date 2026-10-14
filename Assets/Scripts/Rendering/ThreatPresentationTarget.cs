@@ -73,7 +73,7 @@ namespace BlindBlade.Perception
         public void ApplySourceState(ThreatSourceState state)
         {
             bool sameLife = _usesSourceState && _sourceState.TargetId == state.TargetId
-                && _sourceState.SpawnGeneration == state.SpawnGeneration;
+                && _sourceState.SpawnGeneration == state.SpawnGeneration && _sourceState.EntityId == state.EntityId;
             if (!sameLife)
             {
                 _hasRuntimeRadius = false;
@@ -81,7 +81,7 @@ namespace BlindBlade.Perception
             }
             bool passed = state.HasPassedPlayer || (sameLife && _sourceState.HasPassedPlayer);
             _sourceState = new ThreatSourceState(state.TargetId, state.SpawnGeneration, state.Kind,
-                state.MeleeType, state.Ownership, passed, state.IsActive);
+                state.MeleeType, state.Ownership, passed, state.IsActive, state.EntityId);
             _usesSourceState = true;
         }
 
