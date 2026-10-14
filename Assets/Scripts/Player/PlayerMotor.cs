@@ -84,6 +84,7 @@ public sealed class PlayerMotor : MonoBehaviour
     private float _dodgeElapsed;
     private float _dodgeProgress;
     private float _nextDodgeTime;
+    private float _dodgeStartedAt = float.NegativeInfinity;
     private float _lastGroundedTime = float.NegativeInfinity;
 
     [Header("공격 쳐내기 밀림")]
@@ -167,6 +168,7 @@ private Vector3 _attackLungeDirection;
 
     public event Action<PlayerFootstepEvent> FootstepEmitted;
     public event Action<PlayerDashEnd> DashEnded;
+    public event Action DodgeStarted;
 
     public float HorizontalSpeed => _lastHorizontalSpeed;
     public float IaidoMaxDistance => _iaidoMaxDistance;
@@ -179,6 +181,7 @@ private Vector3 _attackLungeDirection;
     public bool IsDashing => _isDashing;
     public bool IsDodging => _isDodging;
     public float DodgeCooldownRemaining => Mathf.Max(0f, _nextDodgeTime - Time.time);
+    public float DodgeStartedAt => _dodgeStartedAt;
 
     private void Awake()
     {
@@ -398,6 +401,7 @@ public void Tick(PlayerLocomotionMode locomotionMode, bool movementLocked, bool 
     /// <summary>
     /// input 방향으로 짧은 회피를 시작하고 접지·재사용 조건을 충족하면 true를 반환한다.
     /// 공격 대시 중에는 input.x로 대시 방향의 좌우를 고르고 방향 입력이 없으면 오른쪽으로 회피한다.
+    /// 시작하면 DodgeStartedAt을 현재 게임 시간으로 바꾸고 DodgeStarted를 발행한다.
     /// </summary>
     public bool TryBeginDodge(Vector2 input)
     {
@@ -419,10 +423,12 @@ public void Tick(PlayerLocomotionMode locomotionMode, bool movementLocked, bool 
         _dodgeElapsed = 0f;
         _dodgeProgress = 0f;
         _nextDodgeTime = Time.time + _dodgeCooldown;
+        _dodgeStartedAt = Time.time;
         _isDodging = true;
         _planarVelocity = Vector3.zero;
         ResetWalkStep();
         AddCombatRecoil(_dodgeDirection, 0.15f);
+        DodgeStarted?.Invoke();
         return true;
     }
 
