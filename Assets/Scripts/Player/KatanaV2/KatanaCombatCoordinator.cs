@@ -93,6 +93,8 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
     private PlayerMotor _motor;
     private PlayerHealth _health;
     private float _defenseReadyUntil;
+    private int _pendingGuardInputId;
+    private int _guardInputId;
 
     [Header("패링 반격")]
     [SerializeField, Min(0.01f), InspectorName("패링 후 반격 가능 시간 (초)")]
@@ -129,14 +131,18 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
     private bool _suppressSheatheOnGuardEnd;
 
     private bool _attackWasDrawn;
+    private readonly PlayerCombatEvents _events = new PlayerCombatEvents();
 
     public event Action<KatanaEvent> EventRaised;
     public event Action<KatanaParryResult> ParrySucceeded;
     public event Action<KatanaDefenseResult> DefenseSucceeded;
+    public PlayerCombatEvents Events => _events;
+    public int GuardInputId => _guardInputId;
     public PlayerController Player => _player;
     public KatanaWeaponState WeaponState => _weaponState;
     public int Strike => _strike;
     public bool HasBufferedAttack => _queuedAttack || _queuedOpeningAttack;
+    public bool HasBufferedDefense => _bufferedDefense;
     public bool IsFirstAttackFollowupBuffered => _queuedAttack && _queuedFirstAttackVisualLink
         && !_queuedTargetedAttack && IsOpeningAttack && _weaponVisual != null && _weaponVisual.HasFirstAttackFollowup;
     public bool IsFirstAttackFollowupTransition => _chainTransition && _queuedFirstAttackVisualLink && _strike == 2
@@ -814,11 +820,17 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
         EventRaised?.Invoke(new KatanaEvent(stage, _strike, _player.CurrentActionId, wasDrawn, detail));
     }
 
-    /// <summary>자유 상태에서는 패링 창을 열고, 미적중 일반 공격 중 새 방어 입력은 즉시 가드로 전환한다. 이미 적중했으면 공격 종료 뒤 가드로 복귀한다.</summary>
-    public bool BeginDefense()
+    /// <summary>
+    /// 자유 상태에서는 패링 창을 열고, 미적중 일반 공격 중 새 방어 입력은 즉시 가드로 전환한다. 이미 적중했으면 공격 종료 뒤 가드로 복귀한다.
+    /// inputId는 이번 요청으로 가드가 시작되면 GuardInputId에 저장되며, 입력 ID가 없는 호출은 0을 사용한다.
+    /// </summary>
+    public bool BeginDefense(int inputId = 0)
     {
         if (!isActiveAndEnabled || _player.IsPaused || Time.timeScale <= 0f)
             return false;
+
+        // 예약된 가드가 나중에 시작돼도 같은 입력으로 기록되도록 요청 시점에 저장한다.
+        _pendingGuardInputId = inputId;
 
         if (_player.CurrentState == PlayerActionState.NormalAttack)
         {
@@ -910,12 +922,13 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
 
 
 
-    /// <summary>자유 상태로 가드에 들어간다. openParryWindow가 참일 때만 즉시 패링 창을 연다.</summary>
+    /// <summary>자유 상태로 가드에 들어가고 마지막 방어 요청의 입력 ID를 GuardInputId에 저장한다. openParryWindow가 참일 때만 즉시 패링 창을 연다.</summary>
     private bool StartDefense(bool openParryWindow)
     {
         if (_player.CurrentState != PlayerActionState.Free || !_player.BeginGuard())
             return false;
 
+        _guardInputId = _pendingGuardInputId;
         _waiting = false;
         if (openParryWindow)
             OpenDefenseWindow();

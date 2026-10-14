@@ -24,6 +24,17 @@ public sealed class InputManager : MonoBehaviour
     private InputAction _guard;
     private InputAction _dodge;
     private bool _crouchToggled;
+    private int _nextInputId;
+    private int _guardInputId;
+    private double _attackPressTime;
+    private double _guardPressTime;
+    private double _guardReleaseTime;
+    private double _dodgePressTime;
+    private int _bufferedAttackInputId;
+    private int _bufferedAttackActionId;
+    private double _bufferedAttackPressTime;
+    private int _bufferedGuardInputId;
+    private double _bufferedGuardPressTime;
 
     public bool IsInitialized => _state != null;
     public bool IsGameplayInputEnabled { get; private set; }
@@ -45,6 +56,12 @@ public sealed class InputManager : MonoBehaviour
         for (int i = 0; i < attack.bindings.Count; i++)
             if (attack.bindings[i].path.StartsWith("<Gamepad>"))
                 attack.ApplyBindingOverride(i, "<Gamepad>/rightShoulder");
+
+        // 프레임 단위 폴링보다 정확한 장치 입력 시각을 기록용으로만 보관한다.
+        attack.performed += RecordAttackPress;
+        _guard.performed += RecordGuardPress;
+        _guard.canceled += RecordGuardRelease;
+        _dodge.performed += RecordDodgePress;
     }
 
     void Update()
@@ -73,17 +90,120 @@ public sealed class InputManager : MonoBehaviour
         else
             player.AddLookInput(look);
 
+        ResolveBufferedInputs(player);
+
         // 새 우클릭은 공격을 가드로 전환하고, 계속 누르는 우클릭은 공격 완료 뒤 가드로 복귀시킨다.
         if (_guard.WasPressedThisFrame() && !player.IsGuarding)
-            _combat.BeginDefense();
+        {
+            _guardInputId = ++_nextInputId;
+            RequestDefense(player, PlayerInputKind.GuardPress);
+        }
         else if (_guard.IsPressed() && !player.IsGuarding
             && player.CurrentState == PlayerActionState.Free)
-            _combat.BeginDefense();
+            RequestDefense(player, PlayerInputKind.GuardHoldResume);
 
-        if (_guard.WasReleasedThisFrame()) _combat.EndDefense();
-        if (_dodge.WasPressedThisFrame()) player.RequestDodge();
-        if (_actions.Player.Attack.WasPressedThisFrame()) _combat.RequestAttack();
+        if (_guard.WasReleasedThisFrame())
+        {
+            _combat.EndDefense();
+            PublishInput(_guardInputId, PlayerInputKind.GuardRelease, PlayerInputStatus.Started, 0, _guardReleaseTime);
+        }
+        if (_dodge.WasPressedThisFrame()) RequestDodge(player);
+        if (_actions.Player.Attack.WasPressedThisFrame()) RequestAttack(player);
     }
+
+    /// <summary>
+    /// 현재 우클릭 _guardInputId로 방어를 요청하고 가드 시작·예약·거부 결과를 kind 입력 기록으로 발행한다.
+    /// 누르고 있는 입력의 재진입은 매 프레임 거부될 수 있으므로 가드가 실제로 시작된 경우에만 기록한다.
+    /// </summary>
+    private void RequestDefense(PlayerController player, PlayerInputKind kind)
+    {
+        bool accepted = _combat.BeginDefense(_guardInputId);
+        PlayerInputStatus status = player.IsGuarding ? PlayerInputStatus.Started
+            : accepted ? PlayerInputStatus.Buffered : PlayerInputStatus.Rejected;
+        if (kind == PlayerInputKind.GuardHoldResume && status != PlayerInputStatus.Started) return;
+        if (status == PlayerInputStatus.Buffered && _combat.HasBufferedDefense)
+        {
+            _bufferedGuardInputId = _guardInputId;
+            _bufferedGuardPressTime = _guardPressTime;
+        }
+        PublishInput(_guardInputId, kind, status, 0, _guardPressTime);
+    }
+
+    /// <summary>
+    /// 새 InputId로 공격을 요청하고 행동 ID 변화로 즉시 시작·예약·거부를 구분해 입력 기록으로 발행한다.
+    /// 즉시 시작된 경우에만 player의 새 행동 ID를 기록한다.
+    /// </summary>
+    private void RequestAttack(PlayerController player)
+    {
+        int inputId = ++_nextInputId;
+        int previousActionId = player.CurrentActionId;
+        bool accepted = _combat.RequestAttack();
+        bool started = accepted && player.CurrentActionId != previousActionId;
+        PlayerInputStatus status = started ? PlayerInputStatus.Started
+            : accepted ? PlayerInputStatus.Buffered : PlayerInputStatus.Rejected;
+        if (status == PlayerInputStatus.Buffered && _combat.HasBufferedAttack)
+        {
+            _bufferedAttackInputId = inputId;
+            _bufferedAttackActionId = player.CurrentActionId;
+            _bufferedAttackPressTime = _attackPressTime;
+        }
+        PublishInput(inputId, PlayerInputKind.Attack, status, started ? player.CurrentActionId : 0, _attackPressTime);
+    }
+
+    /// <summary>
+    /// 예약된 공격·가드 입력이 Coordinator에서 처리됐으면 같은 InputId로 Started 또는 BufferDropped 후속 기록을 발행한다.
+    /// 공격은 예약 당시와 player의 행동 ID가 다르면 시작, 가드는 GuardInputId가 같으면 시작으로 보며 판정 상태는 바꾸지 않는다.
+    /// </summary>
+    private void ResolveBufferedInputs(PlayerController player)
+    {
+        if (_bufferedAttackInputId != 0 && !_combat.HasBufferedAttack)
+        {
+            bool started = player.CurrentActionId != _bufferedAttackActionId;
+            PublishInput(_bufferedAttackInputId, PlayerInputKind.Attack,
+                started ? PlayerInputStatus.Started : PlayerInputStatus.BufferDropped,
+                started ? player.CurrentActionId : 0, _bufferedAttackPressTime);
+            _bufferedAttackInputId = 0;
+        }
+
+        if (_bufferedGuardInputId != 0 && !_combat.HasBufferedDefense)
+        {
+            bool started = _combat.GuardInputId == _bufferedGuardInputId;
+            PublishInput(_bufferedGuardInputId, PlayerInputKind.GuardPress,
+                started ? PlayerInputStatus.Started : PlayerInputStatus.BufferDropped, 0, _bufferedGuardPressTime);
+            _bufferedGuardInputId = 0;
+        }
+    }
+
+    /// <summary>새 InputId로 player의 회피를 요청하고 시작 또는 거부 결과를 입력 기록으로 발행한다.</summary>
+    private void RequestDodge(PlayerController player)
+    {
+        int inputId = ++_nextInputId;
+        bool accepted = player.RequestDodge();
+        PublishInput(inputId, PlayerInputKind.Dodge,
+            accepted ? PlayerInputStatus.Started : PlayerInputStatus.Rejected, 0, _dodgePressTime);
+    }
+
+    /// <summary>
+    /// inputId·kind·status·actionId와 장치 입력 시각 deviceTime, 현재 프레임의 실시간·게임 시간으로 입력 기록을 만든다.
+    /// 만든 기록을 Coordinator의 InputResolved 사건으로 발행하며 입력 처리 결과는 바꾸지 않는다.
+    /// </summary>
+    private void PublishInput(int inputId, PlayerInputKind kind, PlayerInputStatus status, int actionId, double deviceTime)
+    {
+        _combat.Events.RaiseInputResolved(new PlayerInputRecord(inputId, kind, status, actionId,
+            deviceTime, Time.realtimeSinceStartupAsDouble, Time.time));
+    }
+
+    /// <summary>context의 장치 입력 시각을 마지막 공격 누름 시각으로 저장한다.</summary>
+    private void RecordAttackPress(InputAction.CallbackContext context) => _attackPressTime = context.time;
+
+    /// <summary>context의 장치 입력 시각을 마지막 우클릭 누름 시각으로 저장한다.</summary>
+    private void RecordGuardPress(InputAction.CallbackContext context) => _guardPressTime = context.time;
+
+    /// <summary>context의 장치 입력 시각을 마지막 우클릭 뗌 시각으로 저장한다.</summary>
+    private void RecordGuardRelease(InputAction.CallbackContext context) => _guardReleaseTime = context.time;
+
+    /// <summary>context의 장치 입력 시각을 마지막 회피 누름 시각으로 저장한다.</summary>
+    private void RecordDodgePress(InputAction.CallbackContext context) => _dodgePressTime = context.time;
 
     void OnApplicationFocus(bool focused)
     {
@@ -193,6 +313,9 @@ public sealed class InputManager : MonoBehaviour
         _state = null;
         _combat = null;
         _motor = null;
+        // 매니저는 다음 씬에서도 재사용되므로 이전 플레이어의 예약 입력 추적을 남기지 않는다.
+        _bufferedAttackInputId = 0;
+        _bufferedGuardInputId = 0;
         if (_actions != null) _actions.Player.Disable();
         if (_crouchHold != null) _crouchHold.Disable();
         if (_crouchToggle != null) _crouchToggle.Disable();
