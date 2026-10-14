@@ -17,9 +17,7 @@ public sealed class KatanaInputCommandAdapter : MonoBehaviour
     private PlayerMotor _motor;
     private InputSystem_Actions _actions;
 
-    private InputAction _crouchHold;
-    private InputAction _crouchToggle;
-    private bool _crouchToggled;
+    private InputAction _scan;
     private InputAction _charge;
     private InputAction _parry;
     private bool _inputAllowed = true;
@@ -44,10 +42,9 @@ public sealed class KatanaInputCommandAdapter : MonoBehaviour
         _legacyAdapter = GetComponent<PlayerInputCommandAdapter>();
         _motor = _combat.Player.GetComponent<PlayerMotor>();
         _actions = new InputSystem_Actions();
-        _crouchHold = new InputAction("KatanaCrouchHold", InputActionType.Button);
-        _crouchHold.AddBinding("<Keyboard>/leftCtrl");
-        _crouchHold.AddBinding("<Keyboard>/rightCtrl");
-        _crouchToggle = new InputAction("KatanaCrouchToggle", InputActionType.Button, "<Keyboard>/c");
+        _scan = new InputAction("KatanaScan", InputActionType.Button, "<Keyboard>/leftCtrl");
+        _scan.AddBinding("<Keyboard>/rightCtrl");
+        _scan.AddBinding("<Keyboard>/c");
     }
 
     void OnEnable()
@@ -55,17 +52,14 @@ public sealed class KatanaInputCommandAdapter : MonoBehaviour
         if (Game.Instance.InputManager != null && Game.Instance.InputManager.IsInitialized) Initialize();
         else SetInputAllowed(true);
         _actions.Player.Enable();
-        _crouchHold.Enable();
-        _crouchToggle.Enable();
+        _scan.Enable();
     }
 
     void OnDisable()
     {
         Shutdown();
         _actions?.Player.Disable();
-        _crouchHold?.Disable();
-        _crouchToggle?.Disable();
-        _crouchToggled = false;
+        _scan?.Disable();
         if (_combat != null)
         {
             _combat.Player.SetMovementInput(Vector2.zero);
@@ -78,8 +72,7 @@ public sealed class KatanaInputCommandAdapter : MonoBehaviour
     void OnDestroy()
     {
         _actions?.Dispose();
-        _crouchHold?.Dispose();
-        _crouchToggle?.Dispose();
+        _scan?.Dispose();
     }
 
     void Update()
@@ -100,9 +93,7 @@ public sealed class KatanaInputCommandAdapter : MonoBehaviour
         }
         if (_combat.Player.IsPaused || !Application.isFocused) return;
 
-        if (_crouchToggle.WasPressedThisFrame())
-            _crouchToggled = !_crouchToggled;
-        _combat.Player.SetCrouchInput(_crouchHold.IsPressed() || _crouchToggled);
+        if (_scan.WasPressedThisFrame()) _combat.Player.RequestScan();
         _combat.SetMovementInput(_actions.Player.Move.ReadValue<Vector2>());
         _combat.AddLookInput(_actions.Player.Look.ReadValue<Vector2>());
         if (_actions.Player.Attack.WasPressedThisFrame()) _combat.RequestAttack();
@@ -112,7 +103,6 @@ public sealed class KatanaInputCommandAdapter : MonoBehaviour
     {
         if (focused || _combat == null) return;
         SetCursor(false);
-        _crouchToggled = false;
         _combat.Player.SetMovementInput(Vector2.zero);
         _combat.Player.SetCrouchInput(false);
         _combat.CancelParryAttempt();

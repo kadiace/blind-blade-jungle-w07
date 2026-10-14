@@ -17,6 +17,7 @@ public sealed class PlayerInputCommandAdapter : MonoBehaviour
     private PlayerMotor _motor;
     private InputSystem_Actions _actions;
     private InputAction _guardAction;
+    private InputAction _scan;
     private bool _resyncAfterPause;
     private bool _inputAllowed = true;
 
@@ -55,6 +56,7 @@ public sealed class PlayerInputCommandAdapter : MonoBehaviour
         _guardAction.started += OnGuardStarted;
         _guardAction.canceled += OnGuardCanceled;
         _guardAction.Enable();
+        _scan.Enable();
 
         _actions.Player.Move.performed += OnMove;
         _actions.Player.Move.canceled += OnMove;
@@ -67,6 +69,7 @@ public sealed class PlayerInputCommandAdapter : MonoBehaviour
     void OnDisable()
     {
         Shutdown();
+        _scan?.Disable();
         if (_actions != null)
         {
             _actions.Player.Move.performed -= OnMove;
@@ -99,6 +102,7 @@ private void OnDestroy()
     {
         _actions?.Dispose();
         _guardAction?.Dispose();
+        _scan?.Dispose();
     }
 
 private void Update()
@@ -130,6 +134,8 @@ private void Update()
             _resyncAfterPause = true;
             return;
         }
+
+        if (_scan.WasPressedThisFrame()) _player.RequestScan();
 
         if (!_resyncAfterPause)
             return;
@@ -238,27 +244,14 @@ private void OnApplicationFocus(bool hasFocus)
     }
 
 
+    /// <summary>전용 이동·전투 액션과 Ctrl 일회성 스캔을 생성한다. 기존 Interact의 E 차지 바인딩은 유지한다.</summary>
 private void CreateInputActions()
     {
         _actions = new InputSystem_Actions();
         _guardAction = new InputAction("Guard", InputActionType.Button, "<Mouse>/rightButton");
 
-        InputAction chargeAction = _actions.Player.Interact;
-        const string existingKeyboardBinding = "<Keyboard>/e";
-        const string chargeControlBinding = "<Keyboard>/leftCtrl";
-
-        // Override only the keyboard binding on this adapter's private action instance.
-        // Other users of the shared Input Actions asset keep their original bindings.
-        for (int i = 0; i < chargeAction.bindings.Count; i++)
-        {
-            if (chargeAction.bindings[i].path != existingKeyboardBinding)
-                continue;
-
-            chargeAction.ApplyBindingOverride(i, chargeControlBinding);
-            return;
-        }
-
-        Debug.LogWarning($"Could not find the expected charge binding '{existingKeyboardBinding}'. Charge input remains unchanged.", this);
+        _scan = new InputAction("PlayerScan", InputActionType.Button, "<Keyboard>/leftCtrl");
+        _scan.AddBinding("<Keyboard>/rightCtrl");
     }
 
 

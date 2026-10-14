@@ -11,8 +11,6 @@ using UnityEngine;
 [DefaultExecutionOrder(-30)]
 public sealed class PlayerController : MonoBehaviour
 {
-    private const float CROUCH_PULSE_RESTART_DELAY = 0.08f;
-    private const float CROUCH_PULSE_RETRY_INTERVAL = 0.2f;
     private const float CROUCH_PULSE_SURFACE_OFFSET = 0.02f;
 
 #if UNITY_EDITOR
@@ -44,9 +42,8 @@ public sealed class PlayerController : MonoBehaviour
     [SerializeField, Min(0f)] private float _targetStandOff = 0.15f;
     [SerializeField, Min(0f)] private float _attackOriginHeight = 1.1f;
 
-    [Header("Crouch input")]
-    [SerializeField, Min(0f), Tooltip("웅크리기를 다시 시작할 수 있는 최소 간격. 일어서기는 즉시 허용합니다.")]
-    private float _crouchReentryInterval = 0.5f;
+    [Header("발구르기 스캔")]
+    [SerializeField, Min(0f)] private float _scanVolume = 1.5f;
 
     [Header("Recovery (scaled game time)")]
     [SerializeField, Min(0f)] private float _normalAttackRecovery = 0.25f;
@@ -84,13 +81,11 @@ public sealed class PlayerController : MonoBehaviour
     private PlayerAttackOutcome _currentAttackOutcome;
     private PlayerSenseContext _lastSenseContext;
     private bool _hasSenseContext;
-    private bool _crouchInputActive;
-    private float _nextCrouchEntryTime;
-    private float _nextCrouchPulseTime;
 
     public event Action<PlayerActionEvent> ActionEvent;
     public event Action<PlayerFootstepEvent> FootstepEmitted;
     public event Action<PlayerSenseContext> SenseContextChanged;
+    public event Action<Vector3> ScanEmitted;
 
     public PlayerActionState CurrentState => _state;
     public int TargetedComboStrike => _targetedComboStrike;
@@ -149,8 +144,6 @@ public sealed class PlayerController : MonoBehaviour
     {
         if (_state == PlayerActionState.Paused || _state == PlayerActionState.Dead)
             return;
-
-        UpdateCrouchPulse();
 
         float deltaTime = Time.deltaTime;
         if (_state == PlayerActionState.Recovery)
@@ -251,54 +244,27 @@ public sealed class PlayerController : MonoBehaviour
         return _motor.TryBeginDodge(_requestedMoveInput);
     }
 
-    /// <summary>웅크리기 진입은 재입력 간격으로 제한하고, 해제는 즉시 이동 장치에 전달합니다.</summary>
+    /// <summary>isCrouching을 이동 장치에 전달한다. 웅크리기 자체는 감각 파동을 발생시키지 않는다.</summary>
     public void SetCrouchInput(bool isCrouching)
     {
         if (_state == PlayerActionState.Paused || _state == PlayerActionState.Dead)
             return;
 
-        bool enteredCrouch = isCrouching && !_crouchInputActive;
-        if (enteredCrouch && Time.time < _nextCrouchEntryTime)
-            return;
-
-        _crouchInputActive = isCrouching;
         _motor?.SetCrouchInput(isCrouching);
-        if (!isCrouching)
-        {
-            _nextCrouchPulseTime = 0f;
-            return;
-        }
-
-        if (enteredCrouch)
-        {
-            _nextCrouchEntryTime = Time.time + Mathf.Max(0f, _crouchReentryInterval);
-            _nextCrouchPulseTime = Time.time + EmitCrouchPulse();
-        }
-    }
-
-    /// <summary>웅크리기 입력과 다음 발행 시각을 사용해 이전 파동 종료 후 감각 파동을 반복 발행한다.</summary>
-    private void UpdateCrouchPulse()
-    {
-        if (_crouchInputActive && Time.time >= _nextCrouchPulseTime)
-            _nextCrouchPulseTime = Time.time + EmitCrouchPulse();
     }
 
     /// <summary>
-    /// 충돌 캡슐 아래의 지면 위치와 시선 방향으로 웅크리기 파동을 생성한다.
-    /// 플레이어 자체와 트리거를 제외하고 표면 위에 배치하며, 성공 여부에 따른 다음 발행 간격을 반환한다.
+    /// 충돌 캡슐 아래의 발 위치와 시선 방향으로 일회성 스캔과 발구르기 소리를 발생시킨다.
+    /// _scanVolume으로 적 청각에 알리고 이동·전투 상태는 변경하지 않으며 파동 생성 성공 여부를 반환한다.
     /// </summary>
-    private float EmitCrouchPulse()
+    public bool RequestScan()
     {
-        if (!Game.IsInitialized)
-            return CROUCH_PULSE_RETRY_INTERVAL;
+        if (_state == PlayerActionState.Paused || _state == PlayerActionState.Dead || Time.timeScale <= 0f)
+            return false;
 
         SensoryManager sensoryManager = Game.Instance.SensoryManager;
-        if (sensoryManager == null)
-            return CROUCH_PULSE_RETRY_INTERVAL;
-
-        float interval = Mathf.Max(0.01f, sensoryManager.CrouchPulseInterval + CROUCH_PULSE_RESTART_DELAY);
         if (!sensoryManager.IsReady)
-            return CROUCH_PULSE_RETRY_INTERVAL;
+            return false;
 
         Vector3 direction = _viewCamera != null ? _viewCamera.transform.forward : transform.forward;
         CharacterController controller = GetComponent<CharacterController>();
@@ -318,8 +284,11 @@ public sealed class PlayerController : MonoBehaviour
             normal = hit.normal;
             position = hit.point + normal * CROUCH_PULSE_SURFACE_OFFSET;
         }
+        Managers.Sound.Play(SoundId.Footstep, position, _scanVolume, gameObject, pitch: 0.75f);
+        sensoryManager.ReportSound(position, _scanVolume, gameObject, false);
         bool spawned = sensoryManager.Emit(new SensoryEvent(position, normal, direction));
-        return spawned ? interval : CROUCH_PULSE_RETRY_INTERVAL;
+        if (spawned) ScanEmitted?.Invoke(position);
+        return spawned;
     }
 
     /// <summary>마우스 또는 패드 시점 변화량을 이동 장치에 누적 전달합니다. 일시정지나 사망 상태에서는 입력을 무시합니다.</summary>

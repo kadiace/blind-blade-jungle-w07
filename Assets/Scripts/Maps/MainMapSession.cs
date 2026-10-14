@@ -30,17 +30,17 @@ public sealed class MainMapSession : MonoBehaviour
         Managers.Sound.SetFootstepOnlyOwner(null);
         _player.FootstepEmitted += HandlePlayerFootstep;
         _swordNoise = GetComponent<StageSwordNoise>();
-        if (!useSwordNoise) return;
         var enemies = new List<EnemyController>();
         foreach (GameObject root in gameObject.scene.GetRootGameObjects())
             enemies.AddRange(root.GetComponentsInChildren<EnemyController>(true));
-        _swordNoise.Initialize(_player, enemies.ToArray(), hearingDistance, alertDuration);
+        _swordNoise.Initialize(_player, enemies.ToArray(), hearingDistance, alertDuration, useSwordNoise);
     }
 
     /// <summary>step의 소음 강도로 세션 플레이어에 붙은 발소리를 재생한다. 이동·공격 판정은 변경하지 않는다.</summary>
     private void HandlePlayerFootstep(PlayerFootstepEvent step)
     {
         Managers.Sound.PlayAttached(SoundId.Footstep, _player.gameObject, step.NoiseStrength);
+        Game.Instance.SensoryManager.ReportSound(step.WorldPosition, step.NoiseStrength, _player.gameObject);
     }
 
     /// <summary>발소리·검 소음 구독과 현재 플레이어 참조를 해제한다. 기존 매니저의 인스턴스는 유지한다.</summary>

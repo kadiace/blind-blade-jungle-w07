@@ -45,22 +45,12 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
             TEXTURE2D_X(_OutlineAlwaysVisibleVfxColor);
             TEXTURE2D_X(_OutlineTransparentDepth);
 
-            #define MAX_SOUND_REGIONS 16
-            float4 _OutlineObserverRegion;
+            #define MAX_SOUND_REGIONS 64
             float4 _OutlineSoundRegions[MAX_SOUND_REGIONS];
             float4 _OutlineSoundRegionRadii[MAX_SOUND_REGIONS];
             int _OutlineSoundCount;
-            float _OutlineSoundStartRadius;
-            float _OutlineSoundEndRadius;
-            float _OutlineSoundLifetime;
-            float _OutlineSoundFadeDuration;
             float _OutlineEdgeFade;
             float _OutlinePerceptionTime;
-            TEXTURE2D(_OutlineTerrainMemory);
-            SAMPLER(sampler_OutlineTerrainMemory);
-            float4 _OutlineMemoryBounds;
-            float4 _OutlineMemoryColor;
-            float _OutlineMemoryEnabled;
 
             // 영역 반경의 안쪽 경계부터 가장자리까지 공간 가시성을 부드럽게 줄인다.
             float RegionVisibility(float3 position, float3 center, float radius)
@@ -71,7 +61,7 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
                 return 1.0 - smoothstep(innerRadius, radius, distance(position, center));
             }
 
-            // 현재 인지를 선 색상으로 표시하고 일반 지형에만 누적 기억 색상을 합성한다.
+            // 독립적인 임시 소리 영역에서만 윤곽선을 표시한다.
             float3 PerceptionColor(float2 uv, float rawDepth, float hasSurface, float includeMemory)
             {
                 if (hasSurface == 0.0)
@@ -83,34 +73,21 @@ Shader "Hidden/BlindBlade/ScreenSpaceOutline"
                     rawDepth = lerp(UNITY_NEAR_CLIP_VALUE, 1.0, rawDepth);
                 #endif
                 float3 position = ComputeWorldSpacePosition(uv, rawDepth, UNITY_MATRIX_I_VP);
-                float visibility = RegionVisibility(
-                    position, _OutlineObserverRegion.xyz, _OutlineObserverRegion.w);
+                float visibility = 0.0;
                 [loop]
                 for (int i = 0; i < _OutlineSoundCount; i++)
                 {
                     float age = max(0.0, _OutlinePerceptionTime - _OutlineSoundRegions[i].w);
-                    float progress = saturate(age / max(_OutlineSoundLifetime, 0.0001));
-                    float expansion = smoothstep(0.0, 1.0, progress);
                     float4 regionRadii = _OutlineSoundRegionRadii[i];
-                    float revealRadius = regionRadii.z > 0.0
-                        ? lerp(regionRadii.x, regionRadii.y, expansion)
-                        : lerp(_OutlineSoundStartRadius, _OutlineSoundEndRadius, expansion);
-                    float timeVisibility = 1.0 - smoothstep(_OutlineSoundLifetime,
-                        _OutlineSoundLifetime + max(_OutlineSoundFadeDuration, 0.0001), age);
+                    float progress = saturate(age / max(regionRadii.z, 0.0001));
+                    float expansion = smoothstep(0.0, 1.0, progress);
+                    float revealRadius = lerp(regionRadii.x, regionRadii.y, expansion);
+                    float timeVisibility = 1.0 - step(regionRadii.z + regionRadii.w, age);
                     float soundVisibility = RegionVisibility(
                         position, _OutlineSoundRegions[i].xyz, revealRadius) * timeVisibility;
                     visibility = max(visibility, soundVisibility);
                 }
-                float memoryVisibility = 0.0;
-                if (includeMemory > 0.5 && _OutlineMemoryEnabled > 0.5)
-                {
-                    float2 memoryUv = (position.xz - _OutlineMemoryBounds.xy) / _OutlineMemoryBounds.zw;
-                    if (all(memoryUv >= 0.0) && all(memoryUv <= 1.0))
-                        memoryVisibility = SAMPLE_TEXTURE2D_LOD(_OutlineTerrainMemory,
-                            sampler_OutlineTerrainMemory, memoryUv, 0).r;
-                }
-                float3 memoryColor = _OutlineMemoryColor.rgb * _OutlineMemoryColor.a * memoryVisibility;
-                return memoryColor * (1.0 - visibility) + _LineColor.rgb * _LineColor.a * visibility;
+                return _LineColor.rgb * _LineColor.a * visibility;
             }
 
             // 깊이의 배경값을 구분하여 하늘의 노멀로 생기는 선을 제외한다.

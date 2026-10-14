@@ -7,12 +7,13 @@ public sealed class EnemySensor : MonoBehaviour
     [SerializeField, Tooltip("게임 시작 시 Game.Player를 사용합니다. 독립 씬에서는 이 참조를 사용합니다.")]
     private Transform _target;
     [SerializeField, Min(0f)] private float _detectionRange = 12f;
+    [SerializeField, Range(1f, 180f)] private float _viewAngle = 100f;
     [SerializeField] private Vector3 _eyeOffset = new Vector3(0f, 1.5f, 0f);
     [SerializeField] private Vector3 _targetOffset = new Vector3(0f, 1f, 0f);
     [SerializeField] private LayerMask _obstacleMask = Physics.DefaultRaycastLayers;
 
     [Header("소리 감지")]
-    [SerializeField, Min(0f), Tooltip("시야 탐지와 독립적인 검 소음 감지 거리입니다. NavMesh 경로 길이를 사용하며 0이면 소음에 반응하지 않습니다.")]
+    [SerializeField, Min(0f), Tooltip("시야와 독립적인 소음 감지 거리입니다. 볼륨에 비례하며 0이면 소음에 반응하지 않습니다.")]
     private float _hearingDistance = 20f;
     [SerializeField] private bool _showHearingRange = true;
 
@@ -46,6 +47,11 @@ public sealed class EnemySensor : MonoBehaviour
         if ((_target.position - transform.position).sqrMagnitude > _detectionRange * _detectionRange)
             return false;
 
+        Vector3 direction = Vector3.ProjectOnPlane(_target.position - transform.position, Vector3.up);
+        if (direction.sqrMagnitude > 0.0001f && Vector3.Dot(transform.forward, direction.normalized)
+            < Mathf.Cos(_viewAngle * 0.5f * Mathf.Deg2Rad))
+            return false;
+
         Vector3 origin = transform.TransformPoint(_eyeOffset);
         Vector3 destination = _target.TransformPoint(_targetOffset);
         RaycastHit[] hits = Physics.RaycastAll(origin, destination - origin,
@@ -67,16 +73,13 @@ public sealed class EnemySensor : MonoBehaviour
         Color previous = Gizmos.color;
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, _detectionRange);
+        Gizmos.DrawRay(transform.position, Quaternion.AngleAxis(-_viewAngle * 0.5f, Vector3.up)
+            * transform.forward * _detectionRange);
+        Gizmos.DrawRay(transform.position, Quaternion.AngleAxis(_viewAngle * 0.5f, Vector3.up)
+            * transform.forward * _detectionRange);
         if (_showHearingRange)
         {
             float range = _hearingDistance;
-            foreach (GameObject root in gameObject.scene.GetRootGameObjects())
-            {
-                GameSceneInitializer settings = root.GetComponentInChildren<GameSceneInitializer>();
-                if (settings == null) continue;
-                range = settings.SwordNoiseEnabled ? Mathf.Min(range, settings.SwordHearingDistance) : 0f;
-                break;
-            }
             Gizmos.color = new Color(0.1f, 0.85f, 1f, 0.7f);
             Gizmos.DrawWireSphere(transform.position, range);
 #if UNITY_EDITOR
@@ -84,7 +87,7 @@ public sealed class EnemySensor : MonoBehaviour
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawWireDisc(transform.position, Vector3.up, range);
             UnityEditor.Handles.Label(transform.position + Vector3.up * 2f,
-                $"소리 감지: {range:0.##}m (NavMesh 경로 거리)");
+                $"소리 감지: {range:0.##}m (볼륨 1 기준)");
             UnityEditor.Handles.color = previousHandleColor;
 #endif
         }

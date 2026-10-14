@@ -131,8 +131,11 @@ public sealed class EnemyFootsteps : MonoBehaviour
             }
         }
         if (soundId != SoundId.None)
+        {
             Managers.Sound.Play(soundId, position, volume: FOOTSTEP_VOLUME, owner: gameObject,
                 playDuringMovement: attackMovement);
+            Game.Instance.SensoryManager.ReportSound(position, FOOTSTEP_VOLUME, gameObject);
+        }
         Footstep?.Invoke(position);
     }
 }

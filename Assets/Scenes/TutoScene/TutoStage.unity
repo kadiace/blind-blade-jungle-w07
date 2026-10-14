@@ -6994,7 +6994,7 @@ MonoBehaviour:
   - _name: "05_\uC6C5\uD06C\uB9AC\uAE30\uC640\uD30C\uB3D9"
     _keys: CTRL / C
     _monologue:
-    - "\uBAB8\uC744 \uB0AE\uCDB0 \uC801\uC758 \uC18C\uB9AC\uB97C \uB4E4\uC5B4\uC57C\uACA0\uAD70."
+    - "발을 굴러 주변을 살핀다. 이 소리는 적도 들을 수 있다."
     _objective: 3
     _anchor: {fileID: 750095343}
     _area: {fileID: 750095342}

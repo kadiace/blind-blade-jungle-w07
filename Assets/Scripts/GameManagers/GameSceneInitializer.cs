@@ -91,14 +91,11 @@ public sealed class GameSceneInitializer : MonoBehaviour
             _round = gameObject.AddComponent<CorridorRoundController>();
             _round.Initialize(_state);
         }
-        if (_useSwordNoise)
-        {
-            var enemies = new List<EnemyController>();
-            foreach (GameObject root in gameObject.scene.GetRootGameObjects())
-                enemies.AddRange(root.GetComponentsInChildren<EnemyController>(true));
-            _swordNoise = gameObject.AddComponent<StageSwordNoise>();
-            _swordNoise.Initialize(_player, enemies.ToArray(), _swordHearingDistance, _swordAlertDuration);
-        }
+        var enemies = new List<EnemyController>();
+        foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+            enemies.AddRange(root.GetComponentsInChildren<EnemyController>(true));
+        _swordNoise = gameObject.AddComponent<StageSwordNoise>();
+        _swordNoise.Initialize(_player, enemies.ToArray(), _swordHearingDistance, _swordAlertDuration, _useSwordNoise);
         _state.BeginPlaying();
     }
 
@@ -119,6 +116,7 @@ public sealed class GameSceneInitializer : MonoBehaviour
     private void HandlePlayerFootstep(PlayerFootstepEvent step)
     {
         Managers.Sound.PlayAttached(SoundId.Footstep, _player.gameObject, step.NoiseStrength);
+        Game.Instance.SensoryManager.ReportSound(step.WorldPosition, step.NoiseStrength, _player.gameObject);
     }
 
     void OnDisable()

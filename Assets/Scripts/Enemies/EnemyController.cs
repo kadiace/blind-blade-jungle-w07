@@ -102,6 +102,13 @@ public class EnemyController : MonoBehaviour
 
         if (_state == EnemyState.Idle || _state == EnemyState.Patrolling)
         {
+            if (!_hasVisibleTarget && Time.time < _noiseAlertUntil)
+            {
+                ChangeState(EnemyState.Idle);
+                _motor.Stop();
+                _motor.FaceTarget(_heardPosition);
+                return;
+            }
             if (!_hasVisibleTarget && _patrol != null && _patrol.IsConfigured)
             {
                 ChangeState(EnemyState.Patrolling);
@@ -198,18 +205,16 @@ public class EnemyController : MonoBehaviour
         ChangeState(EnemyState.Idle);
     }
 
-    /// <summary>position에서 들린 검 소음을 duration 동안 기억하고 순찰을 중단해 소음 위치로 접근한다.</summary>
+    /// <summary>position의 소리 방향을 duration 동안 기억한다. 미발견 상태에서는 순찰을 멈춰 회전하고 추적 기억은 변경하지 않는다.</summary>
     public void HearNoise(Vector3 position, float duration)
     {
         if (!isActiveAndEnabled || _sensor.Target == null)
             return;
         _heardPosition = position;
         _noiseAlertUntil = Time.time + Mathf.Max(0.1f, duration);
-        _lastKnownPosition = position;
-        _lastSeenTime = Time.time;
         _nextPerceptionTime = 0f;
-        if (!_attackSelector.IsBusy)
-            ChangeState(EnemyState.Searching);
+        if (!_attackSelector.IsBusy && (_state == EnemyState.Idle || _state == EnemyState.Patrolling))
+            ChangeState(EnemyState.Idle);
     }
 
     /// <summary>
@@ -229,19 +234,12 @@ public class EnemyController : MonoBehaviour
 
         if (_hasVisibleTarget)
         {
+            _noiseAlertUntil = float.NegativeInfinity;
             _lastKnownPosition = _sensor.Target.position;
             _lastSeenTime = Time.time;
             ChangeState(_attackSelector.isActiveAndEnabled &&
                 _attackSelector.CanAttack(_sensor.Target) ? EnemyState.Attacking :
                     (AllowsWalkingChase ? EnemyState.Chasing : EnemyState.Idle));
-            return;
-        }
-
-        if (Time.time < _noiseAlertUntil)
-        {
-            _lastKnownPosition = _heardPosition;
-            _lastSeenTime = Time.time;
-            ChangeState(EnemyState.Searching);
             return;
         }
 

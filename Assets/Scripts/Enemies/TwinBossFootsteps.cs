@@ -34,7 +34,10 @@ public sealed class TwinBossFootsteps : MonoBehaviour
     {
         SoundId sound = EnemySoundSettings.GetSound(EnemySoundAction.Footstep, EnemySoundStage.Action);
         if (sound != SoundId.None)
+        {
             Managers.Sound.Play(sound, position, volume: _volume, owner: gameObject, playDuringMovement: true);
+            Game.Instance.SensoryManager.ReportSound(position, _volume, gameObject);
+        }
     }
 
     void OnDisable()

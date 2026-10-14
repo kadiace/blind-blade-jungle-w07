@@ -218,6 +218,7 @@ public sealed class TutorialGuide : MonoBehaviour
         if (_bound)
         {
             _player.ActionEvent -= HandleAction;
+            _player.ScanEmitted -= HandleScan;
             _combat.EventRaised -= HandleCombat;
             _bound = false;
         }
@@ -248,6 +249,7 @@ public sealed class TutorialGuide : MonoBehaviour
         _state = Game.Instance.GameStateManager;
         _initialView = _camera.transform.rotation;
         _player.ActionEvent += HandleAction;
+        _player.ScanEmitted += HandleScan;
         _combat.EventRaised += HandleCombat;
         _bound = true;
         return true;
@@ -354,16 +356,21 @@ public sealed class TutorialGuide : MonoBehaviour
         }
     }
 
-    /// <summary>실제 이동·시점·웅크리기·회피 및 연결된 문 상태를 관찰해 안내 확인 표시를 갱신한다.</summary>
+    /// <summary>실제 이동·시점·회피 및 연결된 문 상태를 관찰해 안내 확인 표시를 갱신한다.</summary>
     private void ObserveMovement()
     {
         if (_motor.HorizontalSpeed > 0.1f) CompleteObjective(TutorialObjective.Move);
         if (Quaternion.Angle(_initialView, _camera.transform.rotation) > 8f) CompleteObjective(TutorialObjective.Look);
-        if (_motor.IsCrouching) CompleteObjective(TutorialObjective.Crouch);
         if (_motor.IsDodging) CompleteObjective(TutorialObjective.Dodge);
         foreach (TutorialLesson lesson in _lessons)
             if (lesson.Objective == TutorialObjective.Door && lesson.Door != null && lesson.Door.IsOpen)
                 CompleteLesson(lesson);
+    }
+
+    /// <summary>실제 position에서 발생한 스캔을 관찰해 기존 Ctrl 안내의 완료 상태를 기록한다.</summary>
+    private void HandleScan(Vector3 position)
+    {
+        CompleteObjective(TutorialObjective.Crouch);
     }
 
     /// <summary>실제 플레이어 action의 공격 시작 및 대상 도약 사건을 관찰한다. 피해와 전투 상태는 변경하지 않는다.</summary>

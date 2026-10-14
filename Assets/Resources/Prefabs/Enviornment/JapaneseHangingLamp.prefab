@@ -131,6 +131,8 @@ GameObject:
   m_Component:
   - component: {fileID: 5742968616310683673}
   - component: {fileID: 2481800564053703763}
+  - component: {fileID: 800001}
+  - component: {fileID: 800002}
   m_Layer: 0
   m_Name: JapaneseHangingLamp
   m_TagString: Untagged
@@ -178,6 +180,44 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.51, y: 0.48, z: 0.51}
   m_Center: {x: 0, y: -0.56, z: 0}
+--- !u!114 &800001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476332441293340721}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a6610d2e704f1648819acc8d7460285, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  EventReference:
+    Guid:
+      Data1: 893119049
+      Data2: 1275936746
+      Data3: -2134117201
+      Data4: -1304679765
+    Path: event:/Ambience/Ambience
+  EventPlayTrigger: 0
+  EventStopTrigger: 12
+  AllowFadeout: 0
+  TriggerOnce: 0
+--- !u!114 &800002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1476332441293340721}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8a187bd2a37480fb1af07d3a7992761, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _volume: 0.2
+  _refreshInterval: 3
+  _audibleDistance: 15
 --- !u!1 &1702088786077548261
 GameObject:
   m_ObjectHideFlags: 0

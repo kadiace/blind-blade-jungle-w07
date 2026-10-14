@@ -30,19 +30,11 @@ public sealed class SensoryManager : MonoBehaviour
     public bool IsReady => _initialized && _observer != null && isActiveAndEnabled;
     public Transform Observer => _observer;
     public int ActiveEffectCount => _activeEffects.Count;
-    public float CrouchPulseInterval
-    {
-        get
-        {
-            SensoryPerceptionMask perceptionMask = GetComponent<SensoryPerceptionMask>();
-            float perceptionDuration = perceptionMask != null ? perceptionMask.SoundLifetime : 0f;
-            float waveDuration = _wavePrefab != null ? _wavePrefab.Duration : 0f;
-            return Mathf.Max(perceptionDuration, waveDuration);
-        }
-    }
     public float WaveStartRadius => _wavePrefab != null ? _wavePrefab.StartRadius : 0f;
+    public float WaveDuration => _wavePrefab != null ? _wavePrefab.Duration : 0f;
     public float WaveEndRadius => _wavePrefab != null ? _wavePrefab.EndRadius : 0f;
     public event Action<SensoryEvent> PerceptionRequested;
+    public event Action<Vector3, float, GameObject> SoundEmitted;
 
     private readonly struct ActiveEffect
     {
@@ -152,6 +144,19 @@ public sealed class SensoryManager : MonoBehaviour
     public bool Emit(SensoryEvent sensoryEvent)
     {
         return EmitEffects(sensoryEvent, false);
+    }
+
+    /// <summary>
+    /// position·volume·source의 소음을 적 청각과 플레이어 인지에 함께 전달한다.
+    /// revealSpace가 false이면 스캔의 별도 확산 인지를 유지하며 즉시 영역 공개는 생략한다.
+    /// </summary>
+    public void ReportSound(Vector3 position, float volume, GameObject source, bool revealSpace = true)
+    {
+        if (!IsReady || volume <= 0f)
+            return;
+        SoundEmitted?.Invoke(position, volume, source);
+        if (revealSpace && Vector3.Distance(position, _observer.position) < _maximumDistance)
+            GetComponent<SensoryPerceptionMask>().RevealSound(position, volume);
     }
 
     /// <summary>

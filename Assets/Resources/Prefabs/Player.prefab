@@ -365,7 +365,7 @@ MonoBehaviour:
   _iaidoAttackRange: 2
   _targetStandOff: 0.15
   _attackOriginHeight: 1.1
-  _crouchReentryInterval: 0.5
+  _scanVolume: 1.5
   _normalAttackRecovery: 0
   _guardStartRecovery: 0
   _guardEndRecovery: 0

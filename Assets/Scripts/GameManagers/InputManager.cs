@@ -19,11 +19,9 @@ public sealed class InputManager : MonoBehaviour
     private KatanaCombatCoordinator _combat;
     private PlayerMotor _motor;
     private InputSystem_Actions _actions;
-    private InputAction _crouchHold;
-    private InputAction _crouchToggle;
+    private InputAction _scan;
     private InputAction _guard;
     private InputAction _dodge;
-    private bool _crouchToggled;
 
     public bool IsInitialized => _state != null;
     public bool IsGameplayInputEnabled { get; private set; }
@@ -32,13 +30,12 @@ public sealed class InputManager : MonoBehaviour
     void Awake()
     {
         _actions = new InputSystem_Actions();
-        _crouchHold = new InputAction("CrouchHold", InputActionType.Button);
-        _crouchHold.AddBinding("<Keyboard>/leftCtrl");
-        _crouchHold.AddBinding("<Keyboard>/rightCtrl");
-        _crouchToggle = new InputAction("CrouchToggle", InputActionType.Button, "<Keyboard>/c");
+        _scan = new InputAction("Scan", InputActionType.Button, "<Keyboard>/leftCtrl");
+        _scan.AddBinding("<Keyboard>/rightCtrl");
+        _scan.AddBinding("<Keyboard>/c");
         _guard = new InputAction("Guard", InputActionType.Button, "<Mouse>/rightButton");
         _dodge = new InputAction("Dodge", InputActionType.Button, "<Keyboard>/space");
-        _crouchToggle.AddBinding("<Gamepad>/buttonEast");
+        _scan.AddBinding("<Gamepad>/buttonEast");
         _guard.AddBinding("<Gamepad>/leftShoulder");
         _dodge.AddBinding("<Gamepad>/buttonSouth");
         InputAction attack = _actions.Player.Attack;
@@ -64,8 +61,7 @@ public sealed class InputManager : MonoBehaviour
             if (_actions.Player.Attack.WasPressedThisFrame() || _guard.WasPressedThisFrame()) SetCursor(true);
             return;
         }
-        if (_crouchToggle.WasPressedThisFrame()) _crouchToggled = !_crouchToggled;
-        player.SetCrouchInput(_crouchHold.IsPressed() || _crouchToggled);
+        if (_scan.WasPressedThisFrame()) player.RequestScan();
         player.SetMovementInput(_actions.Player.Move.ReadValue<Vector2>());
         Vector2 look = _actions.Player.Look.ReadValue<Vector2>();
         if (_actions.Player.Look.activeControl != null && _actions.Player.Look.activeControl.device is Gamepad)
@@ -101,8 +97,7 @@ public sealed class InputManager : MonoBehaviour
     {
         Shutdown();
         _actions.Dispose();
-        _crouchHold.Dispose();
-        _crouchToggle.Dispose();
+        _scan.Dispose();
         _guard.Dispose();
         _dodge.Dispose();
     }
@@ -116,8 +111,7 @@ public sealed class InputManager : MonoBehaviour
         _motor = Game.Player.GetComponent<PlayerMotor>();
         _state.StateChanged += HandleState;
         _actions.Player.Enable();
-        _crouchHold.Enable();
-        _crouchToggle.Enable();
+        _scan.Enable();
         _guard.Enable();
         _dodge.Enable();
     }
@@ -139,10 +133,9 @@ public sealed class InputManager : MonoBehaviour
         GameplayInputEnabledChanged?.Invoke(enabled);
     }
 
-    /// <summary>Game.Player의 이동·웅크리기·가드·차지·패링 시도를 정리하고 입력 토글과 모터 입력을 초기화한다.</summary>
+    /// <summary>Game.Player의 이동·가드·차지·패링 시도를 정리하고 모터 입력을 초기화한다.</summary>
     private void ClearHeldInput()
     {
-        _crouchToggled = false;
         PlayerController player = Game.Player;
         if (player == null) return;
         player.SetMovementInput(Vector2.zero);
@@ -180,7 +173,7 @@ public sealed class InputManager : MonoBehaviour
                 player.RequestDodge();
                 break;
             case TutorialResumeInput.Crouch:
-                player.SetCrouchInput(true);
+                player.RequestScan();
                 break;
         }
     }
@@ -194,8 +187,7 @@ public sealed class InputManager : MonoBehaviour
         _combat = null;
         _motor = null;
         if (_actions != null) _actions.Player.Disable();
-        if (_crouchHold != null) _crouchHold.Disable();
-        if (_crouchToggle != null) _crouchToggle.Disable();
+        if (_scan != null) _scan.Disable();
         if (_guard != null) _guard.Disable();
         if (_dodge != null) _dodge.Disable();
         SetCursor(false);
