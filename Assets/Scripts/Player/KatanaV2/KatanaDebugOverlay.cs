@@ -21,6 +21,12 @@ public sealed class KatanaDebugOverlay : MonoBehaviour
     private bool _lastWasParry;
     private float _feedbackUntil;
 
+    [Header("판정 시간 기록")]
+    private int _lastGuardInputId;
+    private float _lastGuardStartTime;
+    private int _lastDodgeId;
+    private float _lastDodgeStartTime;
+
     private readonly Queue<string> _recent = new Queue<string>();
     private readonly StringBuilder _text = new StringBuilder(600);
     private KatanaCombatCoordinator _combat;
@@ -41,6 +47,10 @@ public sealed class KatanaDebugOverlay : MonoBehaviour
         _combat.Player.ActionEvent += HandlePlayer;
         _receiver.DamageReceived += HandleDamage;
         _combat.DefenseSucceeded += HandleDefense;
+        _combat.Events.InputResolved += HandleInputResolved;
+        _combat.Events.DefenseResolved += HandleDefenseResolved;
+        _combat.Events.DodgeChanged += HandleDodgeChanged;
+        _combat.Events.RevealPulseRequested += HandleRevealPulse;
     }
 
     void OnDisable()
@@ -49,6 +59,10 @@ public sealed class KatanaDebugOverlay : MonoBehaviour
         _combat.Player.ActionEvent -= HandlePlayer;
         _receiver.DamageReceived -= HandleDamage;
         _combat.DefenseSucceeded -= HandleDefense;
+        _combat.Events.InputResolved -= HandleInputResolved;
+        _combat.Events.DefenseResolved -= HandleDefenseResolved;
+        _combat.Events.DodgeChanged -= HandleDodgeChanged;
+        _combat.Events.RevealPulseRequested -= HandleRevealPulse;
     }
 
     void OnGUI()
@@ -78,6 +92,54 @@ public sealed class KatanaDebugOverlay : MonoBehaviour
         _lastDefense = result.IsParry ? "패링 성공" : "가드 성공";
         _feedbackNotice = _lastDefense;
         _feedbackUntil = Time.time + _feedbackDuration;
+    }
+
+    /// <summary>
+    /// 우클릭 record가 가드를 실제로 시작했으면 그 InputId와 게임 시간을 저장한다.
+    /// 누르고 있는 우클릭의 재진입도 새 패링 창을 열므로 같은 방식으로 갱신한다. 게임 판정은 변경하지 않는다.
+    /// </summary>
+    private void HandleInputResolved(PlayerInputRecord record)
+    {
+        if (record.Status != PlayerInputStatus.Started
+            || (record.Kind != PlayerInputKind.GuardPress && record.Kind != PlayerInputKind.GuardHoldResume)) return;
+        _lastGuardInputId = record.InputId;
+        _lastGuardStartTime = record.GameTime;
+    }
+
+    /// <summary>방어 판정 resolution의 결과와 피해, 가드 시작 또는 회피 시작 뒤 지난 시간을 기록한다. 게임 판정은 변경하지 않는다.</summary>
+    private void HandleDefenseResolved(DefenseResolution resolution)
+    {
+        string timing = "";
+        if (resolution.GuardInputId != 0 && resolution.GuardInputId == _lastGuardInputId)
+            timing = " | 가드 시작 후 " + (resolution.GameTime - _lastGuardStartTime).ToString("0.000") + "초";
+        else if (resolution.DodgeId != 0 && resolution.DodgeId == _lastDodgeId)
+            timing = " | 회피 시작 후 " + (resolution.GameTime - _lastDodgeStartTime).ToString("0.000") + "초";
+        RecordCombat("판정 " + resolution.Outcome + " | 피해 " + resolution.AppliedDamage.ToString("0.#") + timing);
+    }
+
+    /// <summary>회피 사건 dodgeEvent를 기록하고 Started이면 회피 ID와 시작 게임 시간을 저장한다.</summary>
+    private void HandleDodgeChanged(PlayerDodgeEvent dodgeEvent)
+    {
+        if (dodgeEvent.Stage == PlayerDodgeStage.Started)
+        {
+            _lastDodgeId = dodgeEvent.DodgeId;
+            _lastDodgeStartTime = dodgeEvent.GameTime;
+        }
+        RecordCombat("회피 " + dodgeEvent.Stage + " #" + dodgeEvent.DodgeId);
+    }
+
+    /// <summary>파동 요청 pulseEvent의 원인과 요청 ID를 기록한다.</summary>
+    private void HandleRevealPulse(PlayerRevealPulseEvent pulseEvent)
+    {
+        RecordCombat("파동 요청 " + pulseEvent.Cause + " #" + pulseEvent.PulseId);
+    }
+
+    /// <summary>전투 판정 text를 최근 목록에 추가하고 설정에 따라 [Combat] 로그를 한 번 남긴다.</summary>
+    private void RecordCombat(string text)
+    {
+        _recent.Enqueue(text);
+        while (_recent.Count > 5) _recent.Dequeue();
+        if (_logEvents) Debug.Log("[Combat] " + text, this);
     }
 
     /// <summary>현재 가드·실제 성공·반격 기회를 화면 아래 중앙에 표시한다. 기술 디버그 패널이 꺼져 있어도 설정에 따라 표시한다.</summary>

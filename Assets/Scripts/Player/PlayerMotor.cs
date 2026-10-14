@@ -1,5 +1,8 @@
 using System;
+
 using UnityEngine;
+
+using BlindBlade.Combat.Contracts;
 
 public enum PlayerDashEndReason
 {
@@ -68,7 +71,8 @@ public sealed class PlayerMotor : MonoBehaviour
     [SerializeField, Min(0f)] private float _dashSlowMotionDuration = 0.12f;
     private bool _isDashSlowMotionActive;
     private float _dashSlowMotionElapsed;
-    private float _timeScaleBeforeDashSlowMotion;
+    private CombatSessionRuntime _timeController;
+    private CombatTimeToken _dashSlowMotionToken;
 
     [Header("짧은 회피")]
     [SerializeField, Min(0.1f)] private float _dodgeDistance = 2.4f;
@@ -80,6 +84,7 @@ public sealed class PlayerMotor : MonoBehaviour
     private float _dodgeElapsed;
     private float _dodgeProgress;
     private float _nextDodgeTime;
+    private float _dodgeStartedAt = float.NegativeInfinity;
     private float _lastGroundedTime = float.NegativeInfinity;
 
     [Header("공격 쳐내기 밀림")]
@@ -163,6 +168,7 @@ private Vector3 _attackLungeDirection;
 
     public event Action<PlayerFootstepEvent> FootstepEmitted;
     public event Action<PlayerDashEnd> DashEnded;
+    public event Action DodgeStarted;
 
     public float HorizontalSpeed => _lastHorizontalSpeed;
     public float IaidoMaxDistance => _iaidoMaxDistance;
@@ -175,6 +181,7 @@ private Vector3 _attackLungeDirection;
     public bool IsDashing => _isDashing;
     public bool IsDodging => _isDodging;
     public float DodgeCooldownRemaining => Mathf.Max(0f, _nextDodgeTime - Time.time);
+    public float DodgeStartedAt => _dodgeStartedAt;
 
     private void Awake()
     {
@@ -394,6 +401,7 @@ public void Tick(PlayerLocomotionMode locomotionMode, bool movementLocked, bool 
     /// <summary>
     /// input 방향으로 짧은 회피를 시작하고 접지·재사용 조건을 충족하면 true를 반환한다.
     /// 공격 대시 중에는 input.x로 대시 방향의 좌우를 고르고 방향 입력이 없으면 오른쪽으로 회피한다.
+    /// 시작하면 DodgeStartedAt을 현재 게임 시간으로 바꾸고 DodgeStarted를 발행한다.
     /// </summary>
     public bool TryBeginDodge(Vector2 input)
     {
@@ -415,10 +423,12 @@ public void Tick(PlayerLocomotionMode locomotionMode, bool movementLocked, bool 
         _dodgeElapsed = 0f;
         _dodgeProgress = 0f;
         _nextDodgeTime = Time.time + _dodgeCooldown;
+        _dodgeStartedAt = Time.time;
         _isDodging = true;
         _planarVelocity = Vector3.zero;
         ResetWalkStep();
         AddCombatRecoil(_dodgeDirection, 0.15f);
+        DodgeStarted?.Invoke();
         return true;
     }
 
@@ -791,27 +801,42 @@ private void TickDash(float deltaTime)
         return false;
     }
 
-    /// <summary>현재 시간 배율을 기억하고 대시 시작 전 짧은 슬로모션을 적용한다.</summary>
+    /// <summary>현재 세션에 대시 예고용 시간 요청을 등록하고 Inspector 설정 시간만큼 유지한다.</summary>
     private void BeginDashSlowMotion()
     {
         if (_dashSlowMotionDuration <= 0f || Time.timeScale <= 0f)
             return;
 
-        _timeScaleBeforeDashSlowMotion = Time.timeScale;
+        _timeController = CombatSessionRuntime.Active;
+        if (_timeController == null || !_timeController.IsInitialized)
+        {
+            _timeController = null;
+            return;
+        }
+
+        CombatTimeRequest request = new CombatTimeRequest(_timeController.Session,
+            "PlayerMotor.IaidoDash", CombatTimeReason.DashTelegraph, _dashSlowMotionScale);
+        _dashSlowMotionToken = _timeController.RequestSlowMotion(request);
+        if (!_dashSlowMotionToken.IsValid)
+        {
+            _timeController = null;
+            return;
+        }
         _dashSlowMotionElapsed = 0f;
         _isDashSlowMotionActive = true;
-        Time.timeScale = _timeScaleBeforeDashSlowMotion * _dashSlowMotionScale;
     }
 
-    /// <summary>대시 예고가 소유한 슬로모션을 종료하고 시작 전 시간 배율을 복구한다.</summary>
+    /// <summary>대시 예고의 시간 요청 토큰을 해제하고 남은 요청에 따른 배율을 유지한다.</summary>
     private void RestoreDashSlowMotion()
     {
         if (!_isDashSlowMotionActive)
             return;
 
-        if (Time.timeScale > 0f)
-            Time.timeScale = _timeScaleBeforeDashSlowMotion;
+        if (_timeController != null && _dashSlowMotionToken.IsValid)
+            _timeController.Release(_dashSlowMotionToken);
 
+        _timeController = null;
+        _dashSlowMotionToken = default;
         _isDashSlowMotionActive = false;
         _dashSlowMotionElapsed = 0f;
     }
