@@ -1,6 +1,7 @@
 using System;
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 public enum KatanaWeaponState { Sheathed, Drawn, Sheathing }
@@ -86,7 +87,16 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
     private bool _sheatheAfterRecovery;
 
     [Header("방어")]
-    [SerializeField, Min(0.01f)] private float _parryWindow = 0.25f;
+    [SerializeField, Min(0f), InspectorName("퍼펙트 패링 시작 (초)")]
+    [Tooltip("우클릭으로 가드가 열린 시각부터 잽니다. 일반 패링 구간과 겹치면 퍼펙트 패링이 우선합니다.")]
+    private float _perfectParryStart = 0f;
+    [SerializeField, Min(0f), InspectorName("퍼펙트 패링 끝 (초)")]
+    private float _perfectParryEnd = 0.1f;
+    [SerializeField, Min(0f), InspectorName("일반 패링 시작 (초)")]
+    [Tooltip("우클릭으로 가드가 열린 시각부터 잽니다. 두 패링 구간 밖의 방어는 가드입니다.")]
+    private float _normalParryStart = 0.1f;
+    [SerializeField, Min(0f), InspectorName("일반 패링 끝 (초)"), FormerlySerializedAs("_parryWindow")]
+    private float _normalParryEnd = 0.25f;
     [SerializeField, Min(0f)] private float _blockInputRecovery = 0.18f;
     [SerializeField, Min(0f), InspectorName("일반 적 가드 밀림 거리 (m)")] private float _guardPushDistance = 0.9f;
     [SerializeField, Min(0.01f), InspectorName("일반 적 가드 밀림 시간 (초)")] private float _guardPushDuration = 0.12f;
@@ -98,7 +108,7 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
 
     [Header("패링 반격")]
     [SerializeField, Min(0.01f), InspectorName("패링 후 반격 가능 시간 (초)")]
-    [Tooltip("정확한 패링 뒤 자동 또는 좌클릭으로 빠른 단발 반격을 시작할 수 있는 시간입니다.")]
+    [Tooltip("일반 패링 뒤 자동 또는 좌클릭으로 빠른 단발 반격을 시작할 수 있는 시간입니다.")]
     private float _counterWindow = 0.5f;
     [SerializeField, Min(0f)] private float _automaticCounterDelay = 0.12f;
     [SerializeField, Min(0f), InspectorName("패링 적 경직 시간 (초)")] private float _parryStaggerDuration = 0.9f;
@@ -116,6 +126,7 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
     private KatanaWeaponState _weaponState;
     private int _strike;
     private float _clock;
+    private float _parryOpenedAt;
     private float _parryUntil;
     private float _parryMotionUntil;
     private float _sheatheUntil;
@@ -157,6 +168,22 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
         && (_player.CurrentState == PlayerActionState.Guarding || _player.CurrentState == PlayerActionState.Free);
     public bool IsParryWindowOpen => _parryOpen && Time.time < _parryUntil
         && _player.IsGuarding;
+
+    /// <summary>
+    /// 지금 가드에 공격이 닿으면 받을 결과를 가드가 열린 뒤 지난 시간으로 반환한다.
+    /// 퍼펙트 패링 구간이면 PerfectParry, 일반 패링 구간이면 NormalParry, 그 외와 패링 창이 닫힌 경우는 Guard다.
+    /// </summary>
+    public DefenseOutcome GuardContactOutcome
+    {
+        get
+        {
+            if (!IsParryWindowOpen) return DefenseOutcome.Guard;
+            float elapsed = Time.time - _parryOpenedAt;
+            if (elapsed >= _perfectParryStart && elapsed < _perfectParryEnd) return DefenseOutcome.PerfectParry;
+            if (elapsed >= _normalParryStart && elapsed < _normalParryEnd) return DefenseOutcome.NormalParry;
+            return DefenseOutcome.Guard;
+        }
+    }
     public bool IsParryMotion => _parryMotion;
     public float SheatheDuration => _sheatheDuration;
     public float ParryRemaining => IsParryWindowOpen ? Mathf.Max(0f, _parryUntil - Time.time) : 0f;
@@ -524,7 +551,7 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
         return _player.RequestIaidoAttack();
     }
 
-    /// <summary>incoming과 eligible을 현재 가드의 패링 시간에 검사한다. 유효한 정확한 패링의 방어 성공 여부를 반환한다.</summary>
+    /// <summary>incoming과 eligible을 현재 가드의 패링 창 안에서만 검사한다. 일반·퍼펙트 패링의 방어 성공 여부를 반환한다.</summary>
     public bool TryParryIncoming(DamageContext incoming, bool eligible)
     {
         return IsParryWindowOpen && TryDefendIncoming(incoming, eligible);
@@ -566,10 +593,14 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
             : Mathf.Max(0f, _clock - _attackStartedAt);
     }
 
-    /// <summary>현재 클럭과 _parryWindow로 가드 시작 직후의 패링 창을 열고 시각화 이벤트를 발행한다.</summary>
+    /// <summary>
+    /// 현재 게임 시간을 _parryOpenedAt에 저장하고 퍼펙트·일반 패링 구간 중 늦게 끝나는 시각까지 패링 창을 연다.
+    /// 시각화 이벤트를 발행한다.
+    /// </summary>
     private void OpenDefenseWindow()
     {
-        _parryUntil = Time.time + _parryWindow;
+        _parryOpenedAt = Time.time;
+        _parryUntil = _parryOpenedAt + Mathf.Max(_perfectParryEnd, _normalParryEnd);
         _parryOpen = true;
         Publish(KatanaStage.ParryAttempted, "Guard started: timed parry window");
     }
@@ -869,33 +900,37 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
 
     /// <summary>
     /// incoming이 eligible인 전방 근접 접촉이고 가드 중이면 피해를 차단한다.
-    /// 패링 시간에 따라 적 회복·반동·방어 피드백을 적용하고 일반 적의 근접 가드에 수평 밀림을 추가하여 성공 여부를 반환한다.
-    /// allowCounter가 false이면 정확한 패링에도 반격 대상·자동 반격을 예약하지 않으며 공격자가 사라진 접촉도 처리한다.
+    /// GuardContactOutcome의 가드·일반 패링·퍼펙트 패링에 따라 적 회복·반동·방어 피드백을 적용하고 일반 적의 근접 가드에 수평 밀림을 추가하여 성공 여부를 반환한다.
+    /// 두 패링은 같은 쳐내기 피드백과 경직을 쓰며 반격 대상·자동 반격은 일반 패링에서만 예약한다.
+    /// allowCounter가 false이면 패링에도 경직·반격 대상·자동 반격을 만들지 않으며 공격자가 사라진 접촉도 처리한다.
     /// </summary>
     public bool TryDefendIncoming(DamageContext incoming, bool eligible, bool allowCounter = true)
     {
         if (!isActiveAndEnabled || !eligible || !_player.IsGuarding || _player.IsPaused
             || incoming.Amount <= 0f || Time.timeScale <= 0f) return false;
-        bool perfect = IsParryWindowOpen;
+        DefenseOutcome outcome = GuardContactOutcome;
+        bool parry = outcome != DefenseOutcome.Guard;
         GameObject instigator = incoming.Instigator;
-        bool counter = perfect && allowCounter;
-        EnemyHealth counterTarget = counter && instigator != null ? instigator.GetComponentInParent<EnemyHealth>() : null;
-        _counterTargetId = counterTarget != null && counterTarget.IsAlive ? counterTarget.TargetId : null;
+        // 퍼펙트 패링의 보상은 강화 공격으로 따로 구현하므로 자동 반격은 일반 패링에만 둔다.
+        bool counter = outcome == DefenseOutcome.NormalParry && allowCounter;
+        EnemyHealth parriedEnemy = parry && allowCounter && instigator != null
+            ? instigator.GetComponentInParent<EnemyHealth>() : null;
+        _counterTargetId = counter && parriedEnemy != null && parriedEnemy.IsAlive ? parriedEnemy.TargetId : null;
         _counterUntil = counter ? Time.time + _counterWindow : 0f;
-        _defenseReadyUntil = perfect ? Time.time : Time.time + _blockInputRecovery;
+        _defenseReadyUntil = parry ? Time.time : Time.time + _blockInputRecovery;
         Vector3 point = _player.GetComponent<EnemyCombatService>().GetGuardContactPoint(incoming.Point);
         _parryOpen = false;
         _waiting = false;
         _weaponState = KatanaWeaponState.Drawn;
         _player.NotifyGuardSuccess();
-        _motor.AddCombatRecoil(incoming.Direction, perfect ? 0.9f : 0.6f);
+        _motor.AddCombatRecoil(incoming.Direction, parry ? 0.9f : 0.6f);
         EnemyAttackBehaviour[] patterns = instigator != null
             ? instigator.GetComponents<EnemyAttackBehaviour>() : System.Array.Empty<EnemyAttackBehaviour>();
         foreach (EnemyAttackBehaviour pattern in patterns)
         {
             if (pattern.PatternId != incoming.PatternId || !(pattern is EnemyMeleeAttack melee)) continue;
-            melee.Deflect(perfect, point);
-            if (!perfect && instigator.GetComponentInParent<BossController>() == null)
+            melee.Deflect(parry, point);
+            if (!parry && instigator.GetComponentInParent<BossController>() == null)
             {
                 Vector3 pushDirection = Vector3.ProjectOnPlane(
                     _player.transform.position - instigator.transform.position, Vector3.up);
@@ -903,15 +938,15 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
                 _motor.ApplyCombatPush(pushDirection, _guardPushDistance, _guardPushDuration);
             }
         }
-        if (counterTarget != null && counterTarget.IsAlive
-            && counterTarget.TryGetComponent(out EnemyAttackSelector selector))
+        if (parriedEnemy != null && parriedEnemy.IsAlive
+            && parriedEnemy.TryGetComponent(out EnemyAttackSelector selector))
             selector.Stagger(_parryStaggerDuration);
-        DefenseSucceeded?.Invoke(new KatanaDefenseResult(incoming, point, perfect));
-        if (perfect)
+        DefenseSucceeded?.Invoke(new KatanaDefenseResult(incoming, point, parry));
+        if (parry)
         {
             Publish(KatanaStage.ParrySucceeded, incoming.PatternId, true);
             ParrySucceeded?.Invoke(new KatanaParryResult(incoming, 1));
-            if (allowCounter)
+            if (counter)
             {
                 _automaticCounterPending = true;
                 _automaticCounterReadyAt = Time.time + Mathf.Min(_automaticCounterDelay, _counterWindow * 0.5f);
@@ -936,7 +971,7 @@ public sealed class KatanaCombatCoordinator : MonoBehaviour
     }
 }
 
-/// <summary>방어 접촉의 원래 피해, 검 앞 접촉점, 정확한 패링 여부를 표현 담당자에게 전달한다.</summary>
+/// <summary>방어 접촉의 원래 피해, 검 앞 접촉점, 패링(일반 또는 퍼펙트) 여부를 표현 담당자에게 전달한다.</summary>
 public readonly struct KatanaDefenseResult
 {
     public DamageContext Incoming { get; }
