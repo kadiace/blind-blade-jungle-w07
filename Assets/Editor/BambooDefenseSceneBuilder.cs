@@ -9,8 +9,6 @@ using UnityEditor.SceneManagement;
 
 using Unity.AI.Navigation;
 
-using TMPro;
-
 /// <summary>
 /// 대숲 방어 씬과 전용 머티리얼·프리팹을 한 번에 생성한다.
 /// 원형 공터·공터를 둘러싼 대나무 고리·NavMesh·공통 프리팹·디렉터를 배치하고 빌드 목록에 씬을 등록한다.
@@ -23,7 +21,6 @@ public static class BambooDefenseSceneBuilder
     private const string THROWER_PREFAB_PATH = ASSET_FOLDER + "/DefenseThrower.prefab";
     private const string MELEE_PREFAB_PATH = ASSET_FOLDER + "/DefenseMelee.prefab";
     private const string UNLIT_SHADER = "Universal Render Pipeline/Unlit";
-    private const string FONT_PATH = "Assets/Fonts/ChosunCentennial_otf SDF.asset";
     private const float CLEARING_RADIUS = 24f;
     private const float PLAYER_RADIUS = 23.6f;
     private const float FOREST_INNER_RADIUS = 24.6f;
@@ -333,10 +330,7 @@ public static class BambooDefenseSceneBuilder
         SetField(spawner, "_meleeSpawnMinimumRadius", CLEARING_RADIUS);
         SetField(spawner, "_meleeSpawnMaximumRadius", FOREST_INNER_RADIUS + 4f);
         root.AddComponent<DefenseHealthRegen>();
-        DefenseRecordHud hud = root.AddComponent<DefenseRecordHud>();
-        SetField(hud, "_director", director);
-        SetField(hud, "_font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH));
-        SetField(root.AddComponent<ShurikenDirectionIndicator>(), "_director", director);
+        BambooDefenseHudAuthoring.Connect(director);
     }
 
     /// <summary>

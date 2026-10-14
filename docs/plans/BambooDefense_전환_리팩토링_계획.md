@@ -1,7 +1,7 @@
 # BambooDefense 전환 및 리팩토링 계획
 
 - 작성일: 2026-10-14
-- 상태: 권장안 승인 후 S1·S2 구현과 핵심 검증, S3 코드·컴파일 확인까지 진행했다. 2026-10-14 사용자 요청으로 작업을 중단하고 인계했다. 재개 지점·미저장 씬·검증 근거는 [진행 문서](BambooDefense_refactoring_progress.md)를 따른다.
+- 상태: 2026-10-14 재개 요청에 따라 S3 수명 검증과 S4 HUD 프리팹 이전·검증을 완료했다. 이번 요청 범위인 S4에서 종료한다. S2 자연 근접 재사용 관찰과 실제 입력 검증 등 남은 확인, S5 시작 지점은 [진행 문서](BambooDefense_refactoring_progress.md)를 따른다.
 - 기준: [UNITY_REFACTOR_CONTEXT.md](../UNITY_REFACTOR_CONTEXT.md), [AGENTS.md](../../AGENTS.md), [기능명세 관리 규칙](../FEATURE_SPEC.md)
 - 목표: 기존 `Assets/Scenes/Build` 게임을 `Assets/Scenes/Defense/BambooDefense.unity` 방식으로 전환하고, 기능을 수정할 때 읽어야 할 코드·문서와 함께 고쳐야 할 설정의 범위를 줄인다.
 - 최초 산출물은 조사 계획서였다. 이후 사용자 요청에 따라 구현·에셋 이전·실행 검증을 진행한다. 아래 최초 조사 결과와 실제 완료 결과는 진행 문서에서 구분한다.

@@ -123,7 +123,7 @@ public sealed class BambooThrower : MonoBehaviour
             _reserved = true;
             if (_telegraphSound != SoundId.None)
                 Managers.Sound.PlayAttached(_telegraphSound, gameObject);
-            _director.NotifyThrowTelegraph(_body.bounds.center);
+            _director.NotifyThrowTelegraph(_body.bounds.center, _telegraphDuration);
             yield return new WaitForSeconds(_telegraphDuration);
             if (!CanThrow())
             {

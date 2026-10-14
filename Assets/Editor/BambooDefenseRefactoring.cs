@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 
 using UnityEngine;
 
@@ -12,6 +9,17 @@ using UnityEditor.SceneManagement;
 public static class BambooDefenseRefactoring
 {
     private const string SCENE_PATH = "Assets/Scenes/Defense/BambooDefense.unity";
+
+    /// <summary>저장된 방어 씬에 HUD 프리팹과 표시 참조를 연결하고 씬을 저장한다. 기존 인스턴스는 유지한다.</summary>
+    [MenuItem("BlindBlade/대숲 방어/리팩토링/HUD 연결 이전")]
+    public static void MigrateHud()
+    {
+        RequireCleanDefenseScene();
+        BambooDefenseDirector director = UnityEngine.Object.FindFirstObjectByType<BambooDefenseDirector>();
+        BambooDefenseHudAuthoring.Connect(director);
+        EditorSceneManager.SaveScene(director.gameObject.scene);
+        Debug.Log("방어 HUD 프리팹 연결 완료");
+    }
 
     /// <summary>현재 씬의 Director 스폰 값을 같은 오브젝트의 Spawner로 복사하고 연결·저장하며 이전 필드 수를 반환한다.</summary>
     [MenuItem("BlindBlade/대숲 방어/리팩토링/스폰 값 이전")]

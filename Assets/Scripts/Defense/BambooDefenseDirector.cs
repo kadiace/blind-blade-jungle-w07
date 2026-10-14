@@ -40,7 +40,7 @@ public sealed class BambooDefenseDirector : MonoBehaviour
     public float SurvivalTime => _elapsed;
     public int Kills => _kills;
     public Vector3 PlayerVelocity => _playerVelocity;
-    public event Action<Vector3> ThrowTelegraphed;
+    public event Action<Vector3, float> ThrowTelegraphed;
     public event Action<DefenseShuriken> ShurikenLaunched;
 
     void Awake()
@@ -119,10 +119,10 @@ public sealed class BambooDefenseDirector : MonoBehaviour
         ShurikenLaunched?.Invoke(shuriken);
     }
 
-    /// <summary>position에서 시작한 전조를 표시 구독자에게 알린다.</summary>
-    internal void NotifyThrowTelegraph(Vector3 position)
+    /// <summary>position에서 시작한 전조와 실제 duration(초)을 표시 구독자에게 알린다.</summary>
+    internal void NotifyThrowTelegraph(Vector3 position, float duration)
     {
-        ThrowTelegraphed?.Invoke(position);
+        ThrowTelegraphed?.Invoke(position, duration);
     }
 
     /// <summary>self를 제외한 빈 투척 위치를 스폰 담당자에게 요청하고 position과 성공 여부를 반환한다.</summary>

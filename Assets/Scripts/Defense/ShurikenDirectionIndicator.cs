@@ -2,8 +2,6 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-using UnityEngine.UI;
-
 /// <summary>
 /// 배그 모바일의 발소리 표시처럼 화면 중심 원 위에 투척 전조와 비행 중인 수리검의 방향을 표시한다.
 /// 플레이어 시점 기준 수평 방향만 사용하며 가까울수록 진하고 크게 보인다.
@@ -13,21 +11,13 @@ public sealed class ShurikenDirectionIndicator : MonoBehaviour
 {
     [Header("연결")]
     [SerializeField] private BambooDefenseDirector _director;
+    [SerializeField, Tooltip("HUD 프리팹의 마커 목록. 배열 길이가 동시 표시 상한입니다. 형태와 색은 각 마커에서 조정합니다.")]
+    private DefenseDirectionMarker[] _graphics;
     private PlayerMotor _motor;
 
-    [Header("원형 표시")]
-    [SerializeField, Min(10f), Tooltip("1920×1080 기준 화면 중심에서 표시 원까지의 반경(픽셀)")]
-    private float _radius = 230f;
-    [SerializeField, Min(1f)] private float _iconSize = 16f;
-    [SerializeField, Min(1f)] private float _arcThickness = 4f;
-    [SerializeField, Range(5f, 90f)] private float _arcAngle = 18f;
-    [SerializeField] private Color _color = new Color(1f, 0.1f, 0.06f, 1f);
-    [SerializeField, Min(1)] private int _poolSize = 12;
     private readonly List<Marker> _markers = new List<Marker>();
 
     [Header("전조·비행 표현")]
-    [SerializeField, Min(0.05f), Tooltip("투척 전조 표시 시간(초). 투척수의 전조 시간과 맞춘다.")]
-    private float _telegraphDuration = 0.6f;
     [SerializeField, Range(0f, 1f)] private float _telegraphAlpha = 0.55f;
     [SerializeField, Min(0.1f), Tooltip("전조 깜빡임 속도(초당 횟수)")]
     private float _pulseRate = 6f;
@@ -56,6 +46,7 @@ public sealed class ShurikenDirectionIndicator : MonoBehaviour
         public DefenseShuriken Shuriken { get; set; }
         public Vector3 Position { get; set; }
         public float StartedAt { get; set; }
+        public float Duration { get; set; }
         public float FadeFromAlpha { get; set; }
 
         /// <summary>graphic을 숨김 상태의 재사용 표시로 보관한다.</summary>
@@ -68,17 +59,12 @@ public sealed class ShurikenDirectionIndicator : MonoBehaviour
 
     void Awake()
     {
-        GameObject canvasObject = new GameObject("ShurikenDirectionCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
-        canvasObject.transform.SetParent(transform, false);
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 3;
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
-        for (int i = 0; i < _poolSize; i++)
-            _markers.Add(new Marker(CreateGraphic(canvasObject.transform, i)));
+        foreach (DefenseDirectionMarker graphic in _graphics)
+        {
+            Marker marker = new Marker(graphic);
+            _markers.Add(marker);
+            Hide(marker);
+        }
     }
 
     void OnEnable()
@@ -109,25 +95,8 @@ public sealed class ShurikenDirectionIndicator : MonoBehaviour
         }
     }
 
-    /// <summary>parent 아래 화면 중심에 놓인 방향 표시 그래픽을 index 이름으로 만들고 숨긴 상태로 반환한다.</summary>
-    private DefenseDirectionMarker CreateGraphic(Transform parent, int index)
-    {
-        GameObject markerObject = new GameObject("Marker_" + index, typeof(RectTransform), typeof(DefenseDirectionMarker));
-        RectTransform rect = (RectTransform)markerObject.transform;
-        rect.SetParent(parent, false);
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = Vector2.zero;
-        DefenseDirectionMarker graphic = markerObject.GetComponent<DefenseDirectionMarker>();
-        graphic.color = _color;
-        graphic.raycastTarget = false;
-        graphic.Configure(_radius, _iconSize, _arcThickness, _arcAngle);
-        graphic.enabled = false;
-        return graphic;
-    }
-
-    /// <summary>position의 투척 전조를 깜빡이는 흐린 표시로 등록한다. 빈 표시가 없으면 생략한다.</summary>
-    private void HandleTelegraph(Vector3 position)
+    /// <summary>position의 투척 전조를 duration(초) 동안 표시하도록 등록한다. 빈 표시가 없으면 생략한다.</summary>
+    private void HandleTelegraph(Vector3 position, float duration)
     {
         Marker marker = AcquireMarker();
         if (marker == null)
@@ -136,6 +105,7 @@ public sealed class ShurikenDirectionIndicator : MonoBehaviour
         marker.Shuriken = null;
         marker.Position = position;
         marker.StartedAt = Time.time;
+        marker.Duration = duration;
         marker.Graphic.enabled = true;
     }
 
@@ -183,7 +153,7 @@ public sealed class ShurikenDirectionIndicator : MonoBehaviour
         switch (marker.Mode)
         {
             case MarkerMode.Telegraph:
-                if (elapsed >= _telegraphDuration)
+                if (elapsed >= marker.Duration)
                 {
                     Hide(marker);
                     return;
