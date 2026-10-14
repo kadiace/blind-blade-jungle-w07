@@ -51959,6 +51959,223 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1815459010}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1819028899
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1968806060}
+    m_Modifications:
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5749555584214531093, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292467161
+      objectReference: {fileID: 0}
+    - target: {fileID: 5749555584214531093, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 7006200990624832129, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_Name
+      value: BambooDefenseHud
+      objectReference: {fileID: 0}
+    - target: {fileID: 7585884103523774683, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+      propertyPath: m_AdditionalShaderChannelsFlag
+      value: 25
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+--- !u!114 &1819028900 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9199135508517175297, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!4 &1819028901 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4215774086827740307, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1819028902 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5749555584214531093, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!114 &1819028903 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 139432649809656705, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028904 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6750226831986052201, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028905 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7609724749400244474, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028906 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1212616470997132313, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028907 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5598960934463850641, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028908 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5888008766192945209, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028909 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5292415724060434700, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028910 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6310670181367968653, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028911 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7355807266782017463, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028912 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7276986238903184452, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
+--- !u!114 &1819028913 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9019828621249697917, guid: 4fa9eb7340da5624ca64e8c9f59e836b, type: 3}
+  m_PrefabInstance: {fileID: 1819028899}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8954c1b70f9442e48b74d4ef861a2028, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseDirectionMarker
 --- !u!1 &1821911190
 GameObject:
   m_ObjectHideFlags: 0
@@ -55832,6 +56049,7 @@ GameObject:
   - component: {fileID: 1968806058}
   - component: {fileID: 1968806057}
   - component: {fileID: 1968806061}
+  - component: {fileID: 1968806062}
   m_Layer: 0
   m_Name: DefenseDirector
   m_TagString: Untagged
@@ -55852,10 +56070,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DefenseRecordHud
   _director: {fileID: 1968806059}
-  _font: {fileID: 11400000, guid: b11c4c70569688e42ab6166059d06671, type: 2}
-  _fontSize: 34
-  _topOffset: 28
-  _color: {r: 0.85, g: 0.85, b: 0.85, a: 1}
+  _text: {fileID: 1819028902}
 --- !u!114 &1968806058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55882,34 +56097,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78d4b271a3d6916429210e29eadc56bc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BambooDefenseDirector
+  _spawner: {fileID: 1968806062}
   _startDelay: 2
   _playerVelocitySmoothing: 8
-  _minimumSpawnDistance: 8
-  _unitRoot: {fileID: 194119305}
-  _throwerPrefab: {fileID: 8088586443167616543, guid: ad82129a3f7118648a5fb6022eeceef5, type: 3}
-  _throwerMinimumRadius: 25.4
-  _throwerMaximumRadius: 29
-  _throwerMaximumDistance: 30
-  _throwerMinimumHeight: 0.6
-  _throwerMaximumHeight: 5.5
-  _throwerSeparation: 3
-  _initialThrowers: 3
-  _throwersPerMinute: 3
-  _maximumThrowers: 12
-  _throwerSpawnInterval: 1.33
   _maximumConcurrentShurikens: 3
   _minimumThrowGap: 0.25
   _deferDuringMeleeTelegraph: 1
   _meleeTelegraphRadius: 4
-  _meleePrefab: {fileID: 2678292632270529432, guid: 69709147bb3f3ad4fb6c4e311ac6ce72, type: 3}
-  _meleeSpawnMinimumRadius: 24
-  _meleeSpawnMaximumRadius: 28.6
-  _meleeStartTime: 5
-  _meleeSpawnsPerMinute: 15
-  _meleeSpawnGrowthPerMinute: 9
-  _chargeTypeStartTime: 90
-  _chargeTypeChance: 0.4
-  _maximumMelee: 30
 --- !u!4 &1968806060
 Transform:
   m_ObjectHideFlags: 0
@@ -55924,6 +56118,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 194119305}
+  - {fileID: 1819028901}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1968806061
@@ -55939,13 +56134,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShurikenDirectionIndicator
   _director: {fileID: 1968806059}
-  _radius: 230
-  _iconSize: 16
-  _arcThickness: 4
-  _arcAngle: 18
-  _color: {r: 1, g: 0.1, b: 0.06, a: 1}
-  _poolSize: 12
-  _telegraphDuration: 0.6
+  _graphics:
+  - {fileID: 1819028913}
+  - {fileID: 1819028912}
+  - {fileID: 1819028911}
+  - {fileID: 1819028910}
+  - {fileID: 1819028909}
+  - {fileID: 1819028908}
+  - {fileID: 1819028907}
+  - {fileID: 1819028906}
+  - {fileID: 1819028905}
+  - {fileID: 1819028904}
+  - {fileID: 1819028903}
+  - {fileID: 1819028900}
   _telegraphAlpha: 0.55
   _pulseRate: 6
   _fadeDuration: 0.3
@@ -55953,6 +56154,40 @@ MonoBehaviour:
   _farDistance: 30
   _farScale: 0.8
   _nearScale: 3
+--- !u!114 &1968806062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1968806056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14c4bf4e5ad8c964d96be4f5092aad87, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseEnemySpawner
+  _minimumSpawnDistance: 8
+  _unitRoot: {fileID: 194119305}
+  _throwerPrefab: {fileID: 8088586443167616543, guid: ad82129a3f7118648a5fb6022eeceef5, type: 3}
+  _throwerMinimumRadius: 25.4
+  _throwerMaximumRadius: 29
+  _throwerMaximumDistance: 30
+  _throwerMinimumHeight: 0.6
+  _throwerMaximumHeight: 5.5
+  _throwerSeparation: 3
+  _initialThrowers: 3
+  _throwersPerMinute: 3
+  _maximumThrowers: 12
+  _throwerSpawnInterval: 1.33
+  _meleePrefab: {fileID: 2678292632270529432, guid: 69709147bb3f3ad4fb6c4e311ac6ce72, type: 3}
+  _meleeSpawnMinimumRadius: 24
+  _meleeSpawnMaximumRadius: 28.6
+  _meleeStartTime: 5
+  _meleeSpawnsPerMinute: 15
+  _meleeSpawnGrowthPerMinute: 9
+  _chargeTypeStartTime: 90
+  _chargeTypeChance: 0.4
+  _maximumMelee: 30
 --- !u!1 &1970433004
 GameObject:
   m_ObjectHideFlags: 0
