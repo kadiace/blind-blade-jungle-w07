@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+
 using UnityEngine;
+
+using BlindBlade.Combat.Contracts;
 
 /// <summary>Player actions that can be observed by the game and presentation systems.</summary>
 public enum PlayerActionState
@@ -70,21 +73,6 @@ public enum PlayerActionStage
     RecoveryStarted,
     RecoveryEnded,
     RequestRejected
-}
-
-/// <summary>
-/// 플레이어가 들어온 공격 1회에 대해 확정한 방어 결과.
-/// NormalParry, DodgeAvoided, Invulnerable은 계약용 값이며 아직 판정에서 만들지 않는다.
-/// </summary>
-public enum DefenseOutcome
-{
-    Hit,
-    Guard,
-    NormalParry,
-    PerfectParry,
-    DodgeAvoided,
-    Invulnerable,
-    Ignored
 }
 
 /// <summary>강화 공격 상태 사건의 단계.</summary>
@@ -313,36 +301,6 @@ public struct PlayerActionEvent
         Outcome = outcome;
         TargetId = targetId;
         WorldPosition = worldPosition;
-    }
-}
-
-/// <summary>들어온 공격 1회의 방어 판정 결과. 공격 식별값은 DamageContext에서 그대로 복사한다.</summary>
-public readonly struct DefenseResolution
-{
-    public DefenseOutcome Outcome { get; }
-    public int AttackId { get; }
-    public int HitId { get; }
-    public int GuardInputId { get; }
-    public float AppliedDamage { get; }
-    public Vector3 ContactPoint { get; }
-    public float GameTime { get; }
-    public double RealTime { get; }
-
-    /// <summary>
-    /// outcome, attackId, hitId, guardInputId, appliedDamage, contactPoint와 판정 시각으로 방어 판정 결과를 만든다.
-    /// guardInputId는 방어에 쓰인 우클릭 입력이며 없으면 0이다. appliedDamage는 실제로 줄어든 체력이다.
-    /// </summary>
-    public DefenseResolution(DefenseOutcome outcome, int attackId, int hitId, int guardInputId, float appliedDamage,
-        Vector3 contactPoint, float gameTime, double realTime)
-    {
-        Outcome = outcome;
-        AttackId = attackId;
-        HitId = hitId;
-        GuardInputId = guardInputId;
-        AppliedDamage = appliedDamage;
-        ContactPoint = contactPoint;
-        GameTime = gameTime;
-        RealTime = realTime;
     }
 }
 
