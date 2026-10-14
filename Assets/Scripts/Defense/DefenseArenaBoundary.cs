@@ -8,7 +8,8 @@ using UnityEngine;
 public sealed class DefenseArenaBoundary : MonoBehaviour
 {
     [Header("플레이어 이동 범위")]
-    [SerializeField, Min(1f)] private float _radius = 11.6f;
+    [SerializeField, Min(1f), Tooltip("플레이어 이동 경계 반경(m). 씬의 Arena에서 조정합니다.")]
+    private float _radius = 23.6f;
     private PlayerController _player;
     private CharacterController _controller;
 

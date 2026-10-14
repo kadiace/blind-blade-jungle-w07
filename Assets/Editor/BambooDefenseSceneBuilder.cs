@@ -36,11 +36,17 @@ public static class BambooDefenseSceneBuilder
 
     /// <summary>
     /// 열린 씬에 저장되지 않은 변경이 없을 때 대숲 방어 씬을 새로 생성하고 저장한다.
-    /// 기존 전용 프리팹·머티리얼은 재사용하고 씬과 NavMesh 에셋은 다시 만든다.
+    /// 기존 씬이 있으면 중단하여 Inspector 조정값과 NavMesh 연결을 보존한다.
     /// </summary>
-    [MenuItem("BlindBlade/대숲 방어/씬 생성")]
+    [MenuItem("BlindBlade/대숲 방어/없는 씬만 신규 생성")]
     public static void Build()
     {
+        if (AssetDatabase.LoadAssetAtPath<SceneAsset>(SCENE_PATH) != null)
+        {
+            Debug.LogWarning("기존 대숲 방어 씬은 재생성하지 않습니다. Inspector에서 수정하거나 이전 도구를 사용하세요.");
+            return;
+        }
+
         for (int i = 0; i < EditorSceneManager.sceneCount; i++)
         {
             if (!EditorSceneManager.GetSceneAt(i).isDirty)
@@ -310,23 +316,22 @@ public static class BambooDefenseSceneBuilder
         SetField(component, "_useSwordNoise", false);
     }
 
-    /// <summary>
-    /// 디렉터·자연 회복·기록 HUD·수리검 방향 표시를 가진 오브젝트를 만들고 프리팹과 숲 범위를 연결한다.
-    /// 투척수는 숲 안쪽 몇 줄, 근접 적은 숲 가장자리부터 안쪽 몇 미터에서 나타나게 한다.
-    /// </summary>
+    /// <summary>세션 기록·스폰·회복·HUD 연결을 생성하고 생성 시에만 기본 숲 범위를 기록한다.</summary>
     private static void CreateDirector(BambooThrower throwerPrefab, GameObject meleePrefab)
     {
         GameObject root = new GameObject("DefenseDirector");
         Transform units = new GameObject("Units").transform;
         units.SetParent(root.transform, false);
         BambooDefenseDirector director = root.AddComponent<BambooDefenseDirector>();
-        SetField(director, "_unitRoot", units);
-        SetField(director, "_throwerPrefab", throwerPrefab);
-        SetField(director, "_throwerMinimumRadius", FOREST_INNER_RADIUS + 0.8f);
-        SetField(director, "_throwerMaximumRadius", FOREST_INNER_RADIUS + 4.4f);
-        SetField(director, "_meleePrefab", meleePrefab);
-        SetField(director, "_meleeSpawnMinimumRadius", CLEARING_RADIUS);
-        SetField(director, "_meleeSpawnMaximumRadius", FOREST_INNER_RADIUS + 4f);
+        DefenseEnemySpawner spawner = root.AddComponent<DefenseEnemySpawner>();
+        SetField(director, "_spawner", spawner);
+        SetField(spawner, "_unitRoot", units);
+        SetField(spawner, "_throwerPrefab", throwerPrefab);
+        SetField(spawner, "_throwerMinimumRadius", FOREST_INNER_RADIUS + 0.8f);
+        SetField(spawner, "_throwerMaximumRadius", FOREST_INNER_RADIUS + 4.4f);
+        SetField(spawner, "_meleePrefab", meleePrefab);
+        SetField(spawner, "_meleeSpawnMinimumRadius", CLEARING_RADIUS);
+        SetField(spawner, "_meleeSpawnMaximumRadius", FOREST_INNER_RADIUS + 4f);
         root.AddComponent<DefenseHealthRegen>();
         DefenseRecordHud hud = root.AddComponent<DefenseRecordHud>();
         SetField(hud, "_director", director);

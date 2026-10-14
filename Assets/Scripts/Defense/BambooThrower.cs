@@ -67,11 +67,7 @@ public sealed class BambooThrower : MonoBehaviour
 
     void OnDisable()
     {
-        if (_routine != null)
-            StopCoroutine(_routine);
-        _routine = null;
-        CancelReservation();
-        DetachShuriken();
+        StopThrowCycle();
         _revealUntil = 0f;
         SetRevealed(false);
     }
@@ -94,9 +90,18 @@ public sealed class BambooThrower : MonoBehaviour
     /// <summary>진행 중인 투척 순환을 정지하고 처음부터 다시 시작한다.</summary>
     private void BeginRoutine()
     {
+        StopThrowCycle();
+        _routine = StartCoroutine(RunThrowCycle());
+    }
+
+    /// <summary>진행 중 코루틴과 보유 예약·비행 구독을 정리한다. 이미 발사한 수리검의 수명은 유지한다.</summary>
+    private void StopThrowCycle()
+    {
         if (_routine != null)
             StopCoroutine(_routine);
-        _routine = StartCoroutine(RunThrowCycle());
+        _routine = null;
+        CancelReservation();
+        DetachShuriken();
     }
 
     /// <summary>
