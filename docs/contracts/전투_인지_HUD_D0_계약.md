@@ -1,184 +1,118 @@
-# 전투·인지·HUD D0 — 공통 계약 및 연결 요청
+# 전투·인지·HUD 공통 계약
 
-- 작성: 2026-10-14, D
-- 계약 버전: `0.1.0-draft`
-- 로그 봉투 스키마: `0.1.0`
-- 상태: D의 구현 가능한 초안 작성. A/B/C의 합의·적용·공급자 구현은 대기 중이다.
-- 코드 위치: `Assets/Scripts/Combat/Contracts/`
+- 갱신일: 2026-10-14
+- 계약 버전: `0.2.0`
+- 텔레메트리 봉투 스키마: `0.1.0` (저장기 미구현)
+- 상태: 현재 공유 저장소의 정식 BambooDefense 수리검 흐름에 적용했다. 외부 팀원 검토·합의는 기록되지 않았다.
+- 코드 경로: `Assets/Scripts/Combat/Contracts/`
 - namespace: `BlindBlade.Combat.Contracts`
-- 실행 순서와 인수 기준: [D PRD](../plans/전투_인지_HUD_D_구현_PRD.md)
+- 구현 계획과 진행: [D PRD](../plans/전투_인지_HUD_D_구현_PRD.md), [D 진행 기록](../plans/전투_인지_HUD_D_progress.md)
 
-## 1. 기준선과 소유권
+## 1. 목적과 소유권
 
-현재 브랜치는 `.git/HEAD`를 직접 읽은 `feature/ui`다. Git CLI는 사용하지 않았다. Unity 버전은 `6000.3.22f1`, Pipeline은 manifest 기준 `0.8.0-exp.1`이다. 프로젝트 게임 코드는 기존 Assembly-CSharp 구성을 유지한다. 신규 asmdef는 추가하지 않는다.
+이 계약은 전투 판정이나 인지 결과를 새로 만들지 않는다. 각 시스템의 소유자가 사실을 확정하고, 다른 시스템은 같은 세션·대상·사건 식별자를 사용한다.
 
-현재 소스에는 AttackId/HitId, 새 스태미너 공급자, ThreatPresentationProvider, 시간 요청 제어기가 없다. 기존 DamageContext 생성자는 `(float, GameObject, Vector3, Vector3, string)`이며 PlayerActionEvent/PlayerAttackRequest의 ActionId는 `int`다. 신규 계약은 기존 타입을 교체하거나 현재 호출부를 바꾸지 않는다.
-
-| 담당 | 단독 수정 범위 | 다른 담당자에게 제공할 것 |
+| 담당 | 확정하고 소유하는 상태 | 현재 연결 |
 | --- | --- | --- |
-| A | PlayerController/Motor/Health/Contracts/Driver, KatanaV2, DamageContext, InputManager | 판정 결과·입력/행동 ID·스태미너 읽기·시간 요청 이관 |
-| B | Defense 진행/스폰/예산/투사체, EnemyCombatService/Health/공격, Defense 전용 프리팹 | 원본 공격/타격/투사체 ID·수명 스냅샷·조회/제거/피해 API |
-| C | 인지/윤곽선/감각·발자국 표현, 셰이더/머티리얼/렌더러 설정 | 표시 결과·발소리 후보·공통 색·파동 |
-| D | 이번 Contracts, HUD 표시, 피격 비네팅, 세션/시간/로그, 공용 연결 도구/문서 | 계약 파일·세션 시계·시간 요청 API·HUD·로그 |
+| A | 플레이어 피해·방어 결과·행동·자원 | `KatanaDamageReceiver`가 공통 `DefenseResolution`을 발행한다. 실제 스태미너 공급자는 아직 없다. |
+| B | 적·투사체 수명·공격 원본 ID·충돌·피해 호출 | BambooDefense의 `DefenseShuriken`이 공격/투사체 ID를 발급하고 resolver를 한 번 호출한다. |
+| C | 인지 가시성·화면 위치·최종 표시 자격/색/투명도 | `CombatThreatPresentationProvider`가 감각 마스크·카메라·발소리 사건을 스냅샷으로 제공한다. |
+| D | 세션 연결·시간 요청 합성·HUD 표시·로그 | `CombatSessionRuntime`과 `ShurikenDirectionIndicator`가 구현돼 있다. 텔레메트리 저장은 미구현이다. |
 
-공용 에셋 저장 담당은 D다. A/B/C는 자기 작업 씬·Variant에서 확인한 뒤 연결 요청서로 전달한다. 공용 원본에 Apply하지 않는다.
+공통 값 타입은 한 곳에만 둔다. `DamageContext.cs`와 `PlayerContracts.cs`에 전역 `IncomingAttackKind`, `DefenseOutcome`, `DefenseResolution`을 다시 정의하지 않는다. 기존 A 공개 계약은 공유 타입을 import해서 사용한다.
 
-### 공용 에셋 기준 해시
+## 2. 세션·시각·식별
 
-D0 시작 시 파일 SHA-256이다. 이번 단계는 해당 파일을 저장하지 않는다.
+| 타입 | 권위 있는 필드 | 의미 |
+| --- | --- | --- |
+| `CombatSessionKey` | `SessionId:string`, `Generation:int` | 새 게임/재시작마다 달라지는 세션 키 |
+| `CombatTimestamp` | `RealtimeSeconds`, `GameplaySeconds`, `ActiveUnscaledSeconds:double` | 세션 시작부터 측정한 실시간, 배율 적용 시간, 명시적 정지를 제외한 실시간 |
+| `CombatEventIdentity` | `Session`, `SourceId:string`, `SourceSequence:long` | 원본 발행자가 사건 생성 시 부여하는 키 |
+| `CombatEntityKey` | `EntityId:string`, `SpawnGeneration:int` | 재사용되는 같은 게임 오브젝트의 활성화 세대 구분 |
+| `CombatCorrelationIds` | `InputId`, `ActionId`, `AttackId`, `HitId`, `ProjectileId`, `DodgeId:int` | 기존 `ActionId:int`와 맞춘 원인 연결 값 |
 
-| 에셋 | SHA-256 |
+- 미부여 ID는 0이고 실제 발급 값은 양수다. 사건 순번, 표시 Revision, 시간 요청 ID는 `long`이다.
+- 공격·투사체 ID는 `CombatSessionRuntime`이 세션마다 1부터 발급한다. D는 사건을 수집할 때 ID를 새로 만들지 않는다.
+- `EnemyHealth.TargetId`는 기존 플레이어 전투 검색과 호환해 유지한다. `SpawnGeneration`을 `OnEnable` 때 증가시켜 풀 재사용을 구분한다.
+- `DamageContext`의 기존 5개 인자 생성자는 유지한다. 새 값을 제공하는 경로는 공격자가 `AttackId`, `HitId`, `IncomingAttackKind`를 지정한다.
+- `CombatSessionRuntime.CaptureTimestamp()`는 세션 시작 기준으로 세 시계를 반환한다. `ActiveUnscaledSeconds`는 explicit freeze 동안 멈추고 슬로모션 중에는 진행한다.
+
+## 3. A — 공격 수신과 확정 결과
+
+유일한 공통 타입은 `DefenseResolution.cs`의 `IncomingAttackKind`, `DefenseOutcome`, `DefenseResolution`이다.
+
+| 결과 | 의미 |
 | --- | --- |
-| Assets/Scenes/Defense/BambooDefense.unity | FA598B8785939EC61A49501E5600237F721E30E2378E6014CFD9FCD1B790FFAE |
-| Assets/Resources/Prefabs/Player.prefab | 1DF7C61BB8DE75BF85F6B60822761A5FDBC885241FAD8BD3D2C7F8B65015E02F |
-| Assets/Scenes/Defense/UI/BambooDefenseHud.prefab | BF6671F92FCD92B9475BB722300D2024B30A0571E96C9CE3067173AC18E96C6D |
-| Assets/Resources/Prefabs/GameManagers/GameStateManager.prefab | 4B1D668758BDEF227288B5200B3D7580C363001A578BB9C722C0A239EB73ED44 |
+| `Hit` | 방어되지 않아 실제 피해가 적용됨 |
+| `Guard` | 일반 가드로 차단 |
+| `NormalParry` | 일반 패링으로 차단 |
+| `PerfectParry` | 퍼펙트 패링으로 차단 |
+| `DodgeAvoided` | A가 확정한 회피 무적 회피 |
+| `Invulnerable` | 다른 무적 상태로 차단 |
+| `Ignored` | 정지·사망·비활성 등으로 판정에서 제외 |
 
-공용 에셋의 미저장 상태에 대한 팀 공동 확인은 미실시다.
+- `IncomingAttackKind`는 `Unknown`, `Melee`, `Charge`, `Projectile`, `PlayerOwned`다. `Unknown`은 기존 공격자/패턴 검사를 보존한다.
+- `IPlayerDefenseResolver.ResolveIncomingAttack(context)`가 한 접촉을 판정한다. 구현체는 `Hit`이면 HP 적용까지 완료한다. 호출자는 반환 결과와 관계없이 `TakeDamage`를 다시 부르지 않는다.
+- `DefenseResolution`은 `Outcome`, `AttackId`, `HitId`, `GuardInputId`, `AppliedDamage`, `ContactPoint`, `GameTime`, `RealTime`을 보존한다.
+- A의 `KatanaDamageReceiver`는 기존 `TryDefendProjectile`·`TakeDamage` 호환 경로를 유지하고 `DefenseResolved`를 발행한다. 이번 수리검은 새 resolver 경로를 사용해 중복 피해를 막는다.
+- 강화 공격 사건, 극한 회피·스태미너 공급자, 실제 일반 패링의 새 동작은 이 연결 범위에서 구현하지 않았다.
 
-## 2. 세션·식별·시각 규칙
+## 4. B — BambooDefense 수리검 원본
 
-| 타입 | 필드 | 의미 |
-| --- | --- | --- |
-| CombatSessionKey | SessionId:string, Generation:int | D가 새 세션마다 GUID N 소문자 문자열과 양수 세대를 부여 |
-| CombatTimestamp | RealtimeSeconds, GameplaySeconds, ActiveUnscaledSeconds:double | 같은 시작점의 초 단위 경과 시간 |
-| CombatEventIdentity | Session, SourceId:string, SourceSequence:long | 원본 사건 고유 키. 공급자가 사건 생성 시 부여 |
-| CombatEntityKey | EntityId:string, SpawnGeneration:int | 세션 내 대상 식별과 풀 활성화 세대 |
-| CombatCorrelationIds | InputId/AttackId/HitId/ProjectileId/DodgeId:long, ActionId:int | 전투 원인과 결과를 연결하는 ID |
+- `DefenseShuriken.Launch`는 세션 런타임에서 `AttackId`와 `ProjectileId`를 각각 발급받는다. 현재 수리검은 한 번 접촉 후 종료하므로 `HitId = 1`을 쓴다.
+- `ProcessHit`은 `Kind = Projectile`을 담은 `DamageContext`를 만들어 `IPlayerDefenseResolver`를 최대 한 번 호출한다. resolver가 없을 때만 `PlayerHealth.TakeDamage` 호환 경로를 쓴다.
+- 반환이 `PerfectParry`이면 B가 기존 검기 반격을 생성한다. 일반 가드/패링의 피해·보상 판단을 B가 다시 계산하지 않는다.
+- `CombatThreatPresentationProvider`는 활성 수리검 위치를 매 LateUpdate에 읽는다. 발사체가 사라지면 마지막 좌표와 같은 Session/Target으로 `IsActive=false`를 발행한다.
+- 현재 세션 발급 ID를 쓰는 공격은 BambooDefense의 `DefenseShuriken`이다. 레거시 보스/일반 적 투사체의 기존 호출부는 이번 요청에서 바꾸지 않았으며 `DamageContext` 5인자 경로에 남아 있다.
 
-- 활성 세션의 ID/세대, 사건 순번, 생성 세대는 양수다. 미해당 연결 ID는 `0`이다. 기본 구조체 값은 활성 세션·유효 사건으로 사용하지 않는다.
-- EntityId는 종류 접두사 등으로 세션 내 충돌을 피한다. 예: `enemy/12`, `projectile/41`, `telegraph/7`, `footstep/<source>/<sequence>`.
-- 적/투사체를 재사용할 때 SpawnGeneration을 증가시킨다. GetInstanceID만으로 영구 식별하지 않는다.
-- SourceId는 세션 내 발행자마다 유일해야 한다. 단순 `B`를 여러 독립 발행자가 공유하지 않는다. 예: `B/projectile-registry`, `A/player`, `C/footsteps`.
-- SourceSequence는 해당 발행자가 원본 사건마다 증가시킨다. 같은 사건 재전달에는 같은 키를 유지한다. 표시의 매 프레임 갱신은 원본 전투 사건을 새로 발행한 것으로 세지 않는다.
-- ActionId는 기존 `int`를 보존한다. 새 ID의 카운터는 소유자가 관리하며 D가 수집 시 생성하지 않는다. 범위 초과 시 조용히 0/음수로 순환시키지 않는다.
-- RealtimeSeconds는 정지·슬로모션에도 흐른다. GameplaySeconds는 전투에 적용된 배율을 따른다. ActiveUnscaledSeconds는 명시적 일시정지·게임오버 동안 멈추고 슬로모션 동안에는 실시간으로 흐른다. 세 시계 모두 세션 시작에서 0으로 맞춘다.
-- 입력 원본 시각은 별도 `inputClockId`, `rawInputSeconds`, 변환 기준점으로 보존한다. Input System 이벤트 시각을 발생 시점 대신 수집 시점으로 덮어쓰지 않는다. 시계 제공자는 D1에서 구현한다.
-- 구독은 주 스레드에서 연결하고 현재 스냅샷을 즉시 읽는다. 종료 직전 사건에는 발생 당시의 세션 키를 유지한다. 이전 키를 현재 키로 바꿔서 수락하지 않는다.
+## 5. C — 인지 결과와 발소리
 
-## 3. A — 판정·스태미너·시간 연결
+`ThreatPresentationSnapshot`은 `Session`, `Target(EntityId, SpawnGeneration)`, `Revision`, `IsActive`, `IsEligible`, `IsInCamera`, `WorldVisible`, `UiVisible`, `UiDirection`, `WorldPosition`, `Proximity`, `Color`, `Alpha`를 보관한다.
 
-### 방어 결과
+- C는 `SensoryPerceptionMask.GetVisibility`와 플레이어 카메라 투영으로 판정한다. 현재 규칙은 `WorldVisible = 인지 가시성 기준 통과 && 카메라 안`, `UiVisible = 활성 && 자격 있음 && !WorldVisible`다.
+- 월드 수리검의 `ShurikenPerceptionEffect`도 공급자의 같은 `VisibilityThreshold`를 사용한다. 기본값 0은 기존의 양수 가시성 기준을 보존하며 HUD와 월드 모델의 인지 경계가 갈라지지 않게 한다.
+- `UiDirection`은 화면 중심 기준 `(x=오른쪽, y=위)` 단위 벡터다. 뒤쪽 투영은 방향을 뒤집고 방향이 모호하면 위쪽을 사용한다.
+- `Proximity`는 공급자 Inspector의 `Near Distance`/`Far Distance`로 계산한다. 색의 alpha는 1, 불투명도는 별도의 `Alpha` 값이다.
+- 현재 공급자는 활성 수리검과 `EnemyFootsteps`에서 발소리 사건을 제공한다. 발소리 `Origin`은 발생 위치로 고정하고, 카메라 회전에 따른 표시 갱신은 같은 EventIdentity와 증가하는 Presentation Revision을 사용한다.
+- 발소리 표시 사건은 Inspector의 `_footstepLifetime` 동안 읽을 수 있다. 이벤트 순번은 적 세대별로 증가하고 표시 Target은 발소리마다 고유하다.
+- 마지막 `_footstepFadeDuration` 동안 C가 Alpha를 감쇠한다. 만료·적 사망·세대 변경·공급자 종료·세션 변경에서는 같은 사건의 `Presentation.IsActive=false`를 발행한다. D는 이를 받아 표시 슬롯을 반환한다.
+- 일반 적 전체의 Threat 수명/표시 우선순위와 다른 투사체 종류는 아직 연결되지 않았다.
 
-`DefenseResolution(long attackId, long hitId, DefenseOutcome outcome)`은 A의 확정 결과다.
+## 6. D — 표시와 시간
 
-| DefenseOutcome | 처리 의미 |
-| --- | --- |
-| Unresolved | 기본값/미구현. 확정 결과 사건으로 발행하지 않음 |
-| Hit | 방어되지 않은 타격. 실제 피해 적용 여부·양은 피해 결과로 별도 기록 |
-| Guard | 일반 가드로 차단 |
-| NormalParry | 일반 패링. 투사체 반사 또는 근접 추가타의 원인 |
-| PerfectParry | 강화 준비의 원인. 접촉 즉시 광역 피해를 실행하지 않음 |
-| DodgeAvoided | 회피 무적으로 회피. DodgeId로 극한 보상의 1회성을 관리 |
-| Invulnerable | 회피 이외 무적으로 차단. 극한 회피 보상을 만들지 않음 |
+### HUD
 
-`IncomingAttackKind`는 Unspecified/Melee/Projectile/Charge다. Charge를 패링할 수 있는지는 기획 결정 항목이다. 같은 HitId의 여러 Collider 접촉을 새로운 독립 타격으로 처리하지 않는다. 연속타는 HitId를 분리한다.
+- `ShurikenDirectionIndicator`는 C `IThreatPresentationProvider`의 초기 목록과 `ThreatChanged`를 구독한다.
+- 마커 키는 Session + Target이며 같은 세대의 이전 Revision을 버린다. C의 방향·색·근접도·투명도를 적용하고 플레이어/투사체 Transform을 저장하지 않는다.
+- 발사 전 텔레그래프는 기존 `BambooDefenseDirector.ThrowTelegraphed`를 유지한다. `CombatFootstepHud`가 발소리 초기 목록과 변경 사건을 받아 24개 Image 풀에 적용한다.
+- `CombatPlayerHud`가 PlayerHealth의 현재 값·HealthChanged와 선택적인 IPlayerStaminaReadModel을 읽는다. 스태미너 공급자가 없으면 빈 게이지·미연결 텍스트로 표시한다. 임시 Sprite 교체 위치는 [전투 HUD](../features/전투_HUD.md)를 따른다. 실제 피격 전용 비네팅 전환은 남아 있다.
 
-판정 진입점 시그니처는 **A가 기존 KatanaDamageReceiver/Coordinator 경로를 검토하여 확정할 대상**이다. 이번 초안에서는 미구현 resolver 인터페이스를 추가하지 않았다. DamageContext에 ID·공격 종류를 추가할 때 생성자 호환 방법과 B의 이관 목록을 함께 전달한다. 기존 bool 경로와 새 경로의 이중 피해를 막는 책임은 A/B다.
+### 시간
 
-### 스태미너 표시
+- `CombatSessionRuntime`이 공식 BambooDefense 경로의 단일 `Time.timeScale` writer다.
+- `RequestSlowMotion`은 현재 Session·OwnerId·Reason·양수 Scale을 확인하고 해제 토큰을 준다. 여러 요청은 최소 Scale, `SetFrozen(true)`는 0으로 합성하며 해제 후 남은 요청을 다시 적용한다.
+- `GameStateManager`는 게임오버 정지를 위임하고 `PlayerMotor`는 대시 예고 토큰을 등록/해제한다. 과거 배율을 각자 저장해 덮어쓰지 않는다.
+- `TutorialGuide`의 직접 시간 쓰기는 정식 씬에서 참조되지 않는 레거시 코드로 남아 있다. 향후 이 씬을 되살릴 때는 이 계약으로 이관한다.
 
-`IPlayerStaminaReadModel.Current`는 `StaminaSnapshot(Current, Maximum)`을 반환하고 변경 후 `Changed`를 한 번 발행한다. D는 이 계약만 읽는다. 소모·환불·회복·고갈에 따른 행동 제한은 A가 소유한다. Current는 0~Maximum, Maximum은 양수인 공급자 값을 전달한다.
+## 7. 미구현 및 다음 범위
 
-HP는 기존 `PlayerHealth.CurrentHealth/MaxHealth/HealthChanged`를 재사용한다. 실제 피격은 `DamageReceived`를 사용한다. A가 기존 사건 의미를 변경하면 이관 계약을 알려야 한다. 치명타에서 SetDead가 DamageReceived보다 먼저 발생하는 현재 순서를 D가 고려한다.
+- `IPlayerStaminaReadModel`은 데이터 계약만 있고 공급자가 없다. HUD가 추정값을 만들지 않는다.
+- `CombatTelemetryEnvelope`와 `combat-telemetry-v0.1.schema.json`은 저장 명세일 뿐 저장기·payload 검증·전처리기는 없다.
+- A의 강화 준비/시작/종료, 스태미너, 회피 보상, 퍼펙트 파동 사건은 형식 일부만 있다.
+- D의 HP·발소리 HUD는 실제 공급자와 연결했고 스태미너 HUD는 공급자를 기다린다. 실제 피격 비네팅 전환, 로그 저장, 전체 Play 통합 인수가 남아 있다.
+- 현재 저장소 변경은 외부 팀원의 검토 완료를 뜻하지 않는다. 병합하거나 추가 변경을 적용하기 전에 각 담당자의 작업공간과 미저장 Editor 상태를 대조한다.
 
-### 시간 요청
+## 8. 적용 기록과 검증
 
-- A는 `ICombatTimeRequests.RequestSlowMotion(CombatTimeRequest)`를 호출하고 반환 토큰을 보관한다.
-- 요청은 현재 세션, 유일한 OwnerId, Reason, 유한한 `0 < Scale <= 1`을 담는다. 0 배율은 A의 슬로모션 요청으로 허용하지 않는다.
-- RequestId 0 토큰은 거부를 뜻한다. A는 요청 실패를 전투 성공으로 오인하지 않는다.
-- `Release(token)`은 실제 해제에서 true, 중복/이전 세션/없는 토큰에서 false다.
-- 준비→공격 전환 때 기존 토큰을 유지할지 새 이유로 교체할지는 A/D 결정 대상이다. 같은 프레임 교체 때문에 잠깐 정상 속도로 돌아가지 않도록 D2에서 전환 순서를 정한다.
-- GameOver/명시적 정지는 D의 세션 상태 연결로 처리한다. A는 직접 timeScale을 쓰지 않는다. 정책 구현은 D2다.
+- `2026-10-14 / 0.2.0`: A의 중복 전역 방어 타입을 공통 namespace 한 곳으로 통합했다. B의 BambooDefense 수리검을 ID 부여와 resolver 호출로 연결했다. C의 위협/발소리 공급자와 D의 HUD consumer를 연결했다. 세션 시계와 게임오버/대시 시간 요청을 연결했다.
+- BambooDefense 씬에는 기존 `GameSceneInitializer` 오브젝트의 `CombatSessionRuntime`과 기존 `DefenseDirector` 오브젝트의 `CombatThreatPresentationProvider`를 Unity Editor로 추가하고 저장했다. 기존 12개 HUD 마커와 `_director` 참조는 유지했다.
+- Unity Editor 6000.3.22f1 재컴파일 성공, 컴파일 오류 0. Console 최신 표본의 C# 경고 1건은 기존 경고다.
+- Play Mode 검증과 테스트 코드는 요청에 포함되지 않아 실행·작성하지 않았다. 수동 검증 시나리오는 D PRD 8절을 따른다.
 
-**A 전달 요청:** DamageContext 확장 설계, 입력 수락/거부 시각과 ID, 스태미너 공급자, 확정 판정 사건, 강화 준비/시작/종료 이유, PlayerMotor 시간 쓰기 이관. 현재는 문서로 준비했으며 실제 전달·응답은 미확인이다.
+## 9. 다른 담당자를 위한 안전한 변경 규칙
 
-## 4. B — 물리 사실·공격 원본·종료 정보
-
-- B가 AttackId, 개별 HitId, ProjectileId, 적 EntityId/SpawnGeneration을 생성한다.
-- 원시 접촉은 무적 중에도 A에게 전달하고 `attack_contact`로 분리한다. 최종 방어 결과를 B가 추측해서 기록하지 않는다.
-- 생성/활성화/반사/통과/제거에는 세션 키·원본 사건 키·대상 키·위치 스냅샷·소유권·종료 이유가 필요하다.
-- Released 뒤 파괴된 Transform을 D가 읽지 않도록 마지막 위치를 **파괴 전에** 복사해서 제공한다. 종료/예산 반환의 1회성은 B가 보장한다.
-- 투사체 일반 반사, 적대 일괄 제거, 광역 피해의 명령 API는 B가 기존 서비스와 맞춰 제안한다. D0에서 빈 성공 구현을 추가하지 않는다.
-- 초기 현재 목록 조회를 제공하거나 C가 같은 레지스트리에서 현재 목록을 조회할 수 있어야 한다.
-- 텔레그래프 유지 시 발사 전 위협 키와 ProjectileId 매핑, 최대 동시 위협 수를 제공한다.
-
-**B 전달 요청:** 위 수명 스냅샷, API 시그니처, 풀 세대 규칙, 최대 동시 위협·예산, Play 종료 오류 재현 여부. 문서 준비 상태이며 전달·응답은 미확인이다.
-
-## 5. C — 위협·발소리 표시 결과
-
-`IThreatPresentationProvider`는 ThreatChanged/FootstepChanged 사건과 GetCurrentThreats/GetCurrentFootsteps 초기 조회를 제공한다. 반환 목록의 내부 컬렉션을 D가 수정하거나 장기 보관하지 않는다. 제공자는 자신의 컬렉션 수명·갱신 시점을 명시한다.
-
-### ThreatPresentationSnapshot
-
-- Session + Target(EntityId, SpawnGeneration)으로 표시를 식별한다. Revision은 대상의 이번 세대에서 양수로 증가한다.
-- IsActive=false는 해당 표시 수명의 종료다. 같은 세대가 다시 활성화되지 않는다. 종료는 더 큰 Revision으로 전달하고 초기 활성 목록에서 제외한다.
-- IsEligible은 인지 자격, IsInCamera는 합의한 카메라 판단이다. WorldVisible/UiVisible이 최종 표현 플래그다. D는 앞의 값들로 별도 거리·차폐 규칙을 만들지 않는다.
-- WorldVisible와 UiVisible은 동시에 true가 되지 않는다. 부적격/종료 대상의 둘 다 false를 C가 보장한다.
-- UiDirection은 카메라 기준 UI 평면의 방향 `(x=오른쪽, y=위)`이다. 유효 방향은 정규화하고, 카메라 바로 뒤 등 투영이 모호한 경우의 방향은 C가 안정적으로 정한다.
-- Color의 alpha는 1, Alpha는 최종 0~1 불투명도로 전달한다. D는 같은 대상을 자기 색상 곡선으로 재계산하지 않는다.
-- 통과·반사 후 UI 재표시 금지 판단은 B 수명을 받아 C가 확정한다. D도 종료된 세대와 마지막 Revision을 유지하여 늦은 갱신을 무시한다.
-
-### FootstepPresentationSnapshot
-
-- EventIdentity는 실제 발소리 1회의 키다. Emitter는 적 생성 세대다. Origin과 OccurredAt은 사건 발생 값으로 고정한다.
-- 내부 Presentation.Target은 발소리별 유일 키다. 적 키를 그대로 쓰면 여러 발걸음이 합쳐지므로 별도 발소리 ID를 쓴다.
-- 카메라 회전 시 Presentation/Revision만 갱신한다. 발소리 Origin을 적의 현재 위치로 덮어쓰지 않는다.
-- 표시 수명은 D 설정의 소유다. C가 표시 후보를 언제 제거할지 같은 설정값/시계를 연결받아 합의한다. D3/D4에서 한 타이머만 권위 있게 사용하며 C/D 각각 다른 수명 값을 만들지 않는다.
-- 적 비활성/재사용 시 해당 세대의 종료 결과를 발행한다. 초기 조회에는 현재 유효한 사건만 포함한다.
-
-**C 전달 요청:** 위 공급자 적용 여부, 종료/초기 조회 순서, 거리·차폐·파동 우선순위, 발소리 수명 연결 방법, 용량 초과 시 표시 우선순위. 문서 준비 상태이며 전달·응답은 미확인이다.
-
-## 6. 로그 봉투와 수명
-
-코드의 CombatTelemetryEnvelope는 원본 사건의 Identity/OccurredAt/Correlation/EventType만 가진다. JsonUtility로 그대로 저장하는 DTO가 아니다. D5가 사건별 typed payload와 명시적 저장 DTO를 작성한다. 이번 JSON Schema는 봉투의 규격이며 payload별 검증은 D5에서 추가한다.
-
-필수 저장 필드는 [JSON Schema](combat-telemetry-v0.1.schema.json)를 따른다. `eventSequence`는 D 저장기가 수신 시 부여하는 세션 내 순번, SourceSequence는 공급자의 발생 순번이다. 발생 시각과 기록 시각을 모두 남기며 수신 순번을 실제 발생 순서로 단정하지 않는다.
-
-| 종류 | 권위 있는 공급자 | 최소 payload 의미 |
-| --- | --- | --- |
-| input_received/accepted/rejected | A | 입력 종류, raw 시각·시계 ID, 수락/거부 이유 |
-| attack_contact | B | 원시 접촉 위치·공격 종류·공격자·피격자 |
-| defense_resolved | A | DefenseOutcome, 무적 원인, 관련 InputId/DodgeId |
-| damage_applied | 피해 소유자 A/B | 실제 차감량, 적용 전/후 값, 사망 여부 |
-| resource_changed | A | 자원 종류, 변경 전/후, 최대치, 원인 |
-| empowered_ready/started/ended, extreme_dodge | A | ActionId/DodgeId, 상태와 종료 이유 |
-| projectile_lifecycle/enemy_lifecycle | B | 대상/세대, 수명 단계, 위치, 소유권/종료 이유 |
-| footstep/reveal_pulse | C 또는 명시한 원본 소유자 | 사건 원점·발생 이유. 중계 사건은 원본 키 유지 |
-| session_started/state_changed/session_ended/time_scale_changed/diagnostic | D | 상태·요청 수·실효 배율·종료/누락 이유 |
-
-- 같은 피해를 raw 접촉, 판정, 피해 적용 3건으로 합산하지 않는다. 피해 통계는 damage_applied, 방어 통계는 defense_resolved를 사용한다.
-- 중복 키는 `(SessionId, Generation, SourceId, SourceSequence)`다. AttackId/HitId는 원인 연결용이며 사건 중복 키가 아니다.
-- ConfigVersion은 A/B/C/D 설정 스냅샷 manifest의 식별값이다. 세션 중 설정을 바꾸면 버전을 바꾸고 적용 시각을 남긴다. 파일 해시/직렬화 형식은 D5에서 구현한다.
-- 정수 ID는 최대 Int64 범위다. 분석기는 정수를 그대로 읽어야 하며 JavaScript Number로 큰 ID를 변환하여 정밀도를 잃지 않게 한다.
-- 입력 원본 시각·시계 기준점은 입력 payload/세션 메타데이터에 보관한다. 외부 시계를 무조건 Unity 실시간과 같은 기준으로 간주하지 않는다.
-- UI 표시 갱신은 기본적으로 매 프레임 전투 로그로 저장하지 않는다. 실제 발소리/수명/판정 사건과 개발용 표현 진단을 구분한다.
-- GameOver는 세션 내 상태 변경이다. 현재 치명타의 후속 DamageReceived까지 수집한 뒤 씬 이탈/재도전/초기화 해제에서 로그를 닫는다.
-- 로그에는 UnityEngine.Object 참조가 없다. 영구 기록에는 ID와 위치·수치 복사본만 사용한다.
-
-## 7. 결정 기록과 합의 상태
-
-| ID | 항목 | D 권장안/현재 상태 | 공동 확인자 |
-| --- | --- | --- | --- |
-| DC01 | 타입 경로·namespace·버전 | 이번 초안으로 작성, 소비자 적용 대기 | A/B/C/D |
-| DC02 | 시계 | 전투: 게임시간, 준비 대기: 정지 제외 실시간, 입력: 원본 변환 보존 | 전원 |
-| DC03 | T_ready | 입력 대기에만 사용, 수락 후 공격 종료까지 슬로모션 권장 | A/D |
-| DC04 | 피격/회피/만료 취소 | A의 상태 전이·종료 이유 표 필요 | A/D |
-| DC05 | 느려지는 대상 | 첫 통합은 세계/플레이어 동일 배율 권장 | A/C/D |
-| DC06 | 시간 합성 | 정지 우선, 슬로모션 최소 배율, fixedDeltaTime 기준 유지 권장 | A/B/D |
-| DC07 | 차폐·거리·파동 | C의 한 결과를 월드/UI가 공유, 세부 규칙 대기 | C/D |
-| DC08 | 텔레그래프 | 유지 여부·발사 전후 ID·용량 대기 | B/C/D |
-| DC09 | 발소리 수명·초과 표시 | D 설정을 공유하고 타이머 중복 금지, C 우선순위 필요 | C/D |
-| DC10 | Charge 패링·반사 목표 소실·적 없는 강화 공격 | A/B 결정 문서 연결 필요 | A/B |
-| DC11 | 공용 에셋 미저장 상태·기준선 | 파일 해시 확보, 팀 작업 공간/미저장 상태는 미확인 | 전원 |
-
-현재 모든 공동 확인은 미완료다. 문서 작성으로 합의 상태를 완료로 바꾸지 않는다. 합의 시 담당·일시·결론·변경 버전을 이 표에 남긴다. 채팅/메일을 자동 전송하지 않았으며, 이 문서를 팀에 전달할 자료로 사용한다.
-
-## 8. 다음 담당자의 실행 순서
-
-1. 위 계약 파일과 스키마를 같은 버전으로 받는다. Assets의 신규 파일은 `.meta`와 함께 전달한다.
-2. A/B/C는 요청 목록에 구현 가능 여부와 기존 API와의 차이를 기록한다.
-3. D는 답변을 반영해 초안을 갱신하고, 공동 합의와 각 작업 공간 컴파일 확인 후 채택 버전을 고정한다.
-4. D1의 세션/시계 구현을 시작한다. 미결정 정책에 의존하는 D2/D6은 해당 결정 후 연결한다.
-
-이 문서는 D가 준비할 수 있는 D0 산출물이다. 네 작업 공간의 공동 합의·컴파일 통과는 별도의 D0 종료 조건으로 남아 있다.
+1. 공유 타입 수정은 이 폴더와 이 문서에서만 기준을 정하고, 같은 이름의 전역 복사본을 만들지 않는다.
+2. A가 판정 규칙/HP 적용을, B가 원본 ID·투사체 수명을, C가 표시 자격·색·방향을, D가 HUD 표시와 시간 합성을 맡는다.
+3. 기존 공개 API를 바꿀 때는 이 문서와 모든 호출부·직렬화 참조를 함께 갱신한다. `ResolveIncomingAttack` 뒤 `TakeDamage`를 중복 호출하지 않는다.
+4. 씬/프리팹 편집은 Unity Editor에서 하고 현재 Inspector 배열·참조를 보존한다. `BambooDefense.unity`를 재생성하지 않는다.
+5. 미구현 항목은 실제 공급자와 소비자가 연결되기 전 완료로 표시하지 않는다. 외부 팀원 확인이 필요하면 이 버전/파일을 전달하고 응답을 기록한다.

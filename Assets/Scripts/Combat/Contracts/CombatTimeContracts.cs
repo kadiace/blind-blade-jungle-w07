@@ -34,6 +34,7 @@ namespace BlindBlade.Combat.Contracts
     {
         public CombatSessionKey Session { get; }
         public long RequestId { get; }
+        public bool IsValid => RequestId > 0;
 
         /// <summary>
         /// session과 requestId를 저장해 시간 요청 토큰을 만든다.
@@ -59,5 +60,11 @@ namespace BlindBlade.Combat.Contracts
         /// 실제 해제 시 true를 반환하며 중복 또는 이전 세션 토큰에는 false를 반환한다.
         /// </summary>
         public bool Release(CombatTimeToken token);
+
+        /// <summary>
+        /// paused 값으로 명시적 게임 정지를 설정하고 현재 슬로모션 요청과 합성해 시간 배율을 갱신한다.
+        /// 슬로모션 토큰은 유지되어 정지를 해제하면 살아 있는 요청이 다시 적용된다.
+        /// </summary>
+        public void SetFrozen(bool paused);
     }
 }

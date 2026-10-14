@@ -1,92 +1,126 @@
 # 전투·인지·HUD D 진행 기록
 
 - 갱신일: 2026-10-14
-- 현재 단계: **D0 — 계약 초안 작성, 공동 합의 대기**
-- 요청: 사용자가 “D0부터 진행해”라고 지시했다.
+- 현재 상태: **공통 계약 v0.2.0. HP·발소리 HUD 구현/연결 및 Play 화면 확인 완료. 스태미너 게이지·연결 슬롯 구현 완료, 실제 공급자 대기. D3/D4의 나머지 범위는 진행 중.**
+- 요청: A/B/C 통합에 이어 사용자가 HP·스태미너·발소리 HUD를 임시 이미지로 만들고 나중에 이미지만 교체 가능하게 요청했다. 프로젝트 내부 수정은 기존 상시 지침에 따라 별도 승인 없이 진행한다.
 - 작업 경로: `C:\Users\JUNGLE\Documents\w07-blindblade-plus`
-- 브랜치: `.git/HEAD` 직접 확인 `feature/ui`. Git CLI·커밋·푸시·브랜치 변경 없음.
+- 브랜치: `feature/ui`. 이번 작업에서 Git CLI와 커밋은 사용하지 않았다.
 - 계획: [D PRD](전투_인지_HUD_D_구현_PRD.md)
-- 계약: [D0 계약 및 연결 요청](../contracts/전투_인지_HUD_D0_계약.md), 버전 `0.1.0-draft`
-- 명세: [공통 계약](../features/전투_인지_HUD_공통_계약.md)
+- 계약: [공통 계약 및 안전한 변경 규칙](../contracts/전투_인지_HUD_D0_계약.md), 버전 `0.2.0`
+- 기능 명세: [전투 HUD](../features/전투_HUD.md), [공통 계약](../features/전투_인지_HUD_공통_계약.md), [전투 판정](../features/전투_판정_계약.md)
 
-## 단계 현황
+## 단계 상태
 
-| 단계 | 상태 | 완료한 것 / 남은 조건 |
+| 단계 | 현재 상태 | 남은 조건 |
 | --- | --- | --- |
-| D0 | 초안 작성, 공동 합의 대기 | 타입·스키마·소유권·요청서 작성. A/B/C 합의·공급자 적용·각 작업 공간 확인 필요 |
-| D1 | 미착수 | 세션/시계 구현, 명시적 Initialize/Shutdown |
-| D2 | 미착수 | 시간 제어기, 상태 연결, A의 직접 시간 쓰기 이관 |
-| D3 | 미착수 | 명시적 HUD 참조, 바, 실제 피해 비네팅 |
-| D4 | 미착수 | C 결과 소비, 발소리, 첫 일반 패링 통합 |
-| D5 | 미착수 | 로그 저장·전처리 구현 |
-| D6 | 미착수 | 강화 공격·극한 회피 통합 |
-| D7 | 미착수 | 공용 에셋 연결·수동 인수 |
-| D8 | 미착수 | 기능별 명세 및 최종 인수인계. 진행 기록은 D0부터 갱신 |
+| D0 | v0.2.0 공유 저장소 적용 완료 | 별도 담당자 작업공간 대조와 검토 기록은 미완료 |
+| D1 | 런타임 코드 적용, 부분 완료 | 재도전/재활성화에서 세션·반복 종료 Play 확인 |
+| D2 | 공식 경로 시간 소유권 적용, 부분 완료 | 게임오버·재도전·중복 토큰 해제와 TutorialGuide 활성 여부 확인 |
+| D3 | HP 게이지·스태미너 HUD 연결 슬롯 구현, 부분 완료 | A의 실제 스태미너 공급자, 실제 피격 전용 비네팅 전환, 완성 아트 |
+| D4 | 수리검·발소리 HUD 연결, 부분 완료 | 다른 투사체 유형, 화면 안팎 전체 인수와 일반 패링 Play 확인 |
+| D5 | 미착수 | 확정 사건 recorder·저장·전처리 |
+| D6 | 미착수 | 강화 공격·극한 회피·보상·파동 연결 |
+| D7 | 미착수 | 공용 에셋 값과 전체 Intro→BambooDefense→게임오버→재도전 인수 확인 |
+| D8 | 진행 중 | 모든 단계 완료 후 최종 인수 문서 갱신 |
 
-## D0 실제 변경
+## 이번 통합에서 정한 단일 계약
 
-### 신규 코드
+- `DefenseOutcome`, `IncomingAttackKind`, `DefenseResolution`의 유일한 정의를 `Assets/Scripts/Combat/Contracts/DefenseResolution.cs`의 `BlindBlade.Combat.Contracts`로 통합했다. A의 `DamageContext`와 `PlayerContracts`가 이를 import한다. 전역 중복 타입을 제거해 같은 이름의 API가 둘로 갈라지지 않게 했다.
+- `CombatCorrelationIds`의 원인 연결 ID는 기존 `ActionId:int`와 같은 `int`로 정리했다. 미부여 값은 0이며 원본 사건 순번·표시 Revision·시간 요청 ID만 `long`을 쓴다.
+- 전투 판정과 실제 피해는 A, 원본 공격/투사체 수명은 B, 가시성과 최종 표시 결과는 C, HUD와 시간 합성은 D가 소유한다. 세부 타입 의미와 비구현 항목은 계약 문서가 기준이다.
+- 사용자는 구현을 요청했고 현재 공유 저장소의 연결을 진행했다. 다른 팀원에게 메시지를 보내거나 별도 검토가 끝났다고 기록하지 않았다.
 
-`Assets/Scripts/Combat/Contracts/`에 아래 파일과 `.meta`, 폴더 `.meta`를 추가했다.
+## 코드 통합
 
-| 파일 | 역할 |
+### A — 판정 결과
+
+- `KatanaDamageReceiver.ResolveIncomingAttack`가 이제 공통 namespace의 `DefenseResolution`을 반환·발행한다.
+- 기존 5인자 `DamageContext` 생성자와 `TryDefendProjectile` 호환 경로는 유지했다. 이번 통합에서 새 공통 타입을 참조하도록 했지만 레거시 호출 전부를 바꾸지는 않았다.
+- 일반 패링·회피 무적·스태미너·강화 공격 사건은 기존 계획대로 후속 구현이다.
+
+### B — BambooDefense 수리검
+
+- `DefenseShuriken.Launch`에서 현재 세션의 `AttackId`와 `ProjectileId`를 각각 발급받는다. 단일 접촉 뒤 종료하는 이 수리검은 `HitId = 1`, `Kind = Projectile`로 피해 문맥을 만든다.
+- `ProcessHit`은 `IPlayerDefenseResolver`가 있으면 한 번 호출한다. 그 결과가 `Hit`이면 A가 이미 피해를 적용했으므로 B는 `TakeDamage`를 중복 호출하지 않는다. Resolver가 없는 기존 PlayerHealth 호환 경로만 `TakeDamage`를 쓴다.
+- 퍼펙트 패링 결과는 기존 B 검기 반격으로 연결한다. 게임플레이 규칙과 수리검 수치 변경은 없다.
+- `EnemyHealth.SpawnGeneration`을 활성화마다 증가시켜 재사용된 적을 대상 세대로 구분한다. 기존 `TargetId`는 유지했다.
+
+### C — 인지·발소리 공급자
+
+- 신규 `CombatThreatPresentationProvider`는 활성 수리검 위치를 읽고 `SensoryPerceptionMask.GetVisibility`와 플레이어 카메라 투영으로 `ThreatPresentationSnapshot`을 만든다.
+- 스냅샷에는 Session/Target/Revision, 인지·카메라·UI 표시 상태, UI 방향, 월드 위치, 근접도, 색과 Alpha가 포함된다. WorldVisible과 UiVisible은 동시에 true가 되지 않는다.
+- `EnemyFootsteps.Footstep`을 구독하고 EventIdentity·세대·고정 발생 원점이 있는 `FootstepPresentationSnapshot`을 D의 발소리 Image HUD에 제공한다.
+- 위협이 사라지면 마지막 위치를 가진 비활성 스냅샷을 발행해 D가 이전 표시를 정리할 수 있다.
+- 발소리 수명 2초·마지막 0.5초 Alpha 감쇠는 C가 소유한다. 만료·사망·발행자 세대 변경·세션/공급자 종료에서 비활성 스냅샷을 발행한다.
+
+### D — 세션·시간·HUD 소비
+
+- 신규 `CombatSessionRuntime`이 세션 키·세션 기준 시계·공격/투사체 ID 발급과 시간 요청을 관리한다. `GameSceneInitializer.Initialize/OnDisable`이 시작·종료한다.
+- `GameStateManager`의 이전 `timeScale` 저장/복원을 없애고 게임오버 정지를 런타임에 위임했다. `PlayerMotor` 대시 예고 직접 시간 쓰기를 요청 토큰으로 대체했다.
+- 정식 경로의 직접 `Time.timeScale` 대입은 `CombatSessionRuntime` 한 곳으로 모았다. `TutorialGuide`에는 레거시 대입이 남아 있으나 S7에서 제거한 정식 씬에서 참조되는지는 별도 확인이 필요하다.
+- `ShurikenDirectionIndicator`는 C 공급자의 세션·대상·Revision 기준 스냅샷을 소비한다. 비행 투사체 Transform을 보관하지 않고, 기존 발사 전조는 BambooDefenseDirector 이벤트를 유지한다.
+- `CombatPlayerHud`는 PlayerHealth 초기값·HealthChanged와 선택적인 IPlayerStaminaReadModel을 연결한다. 공급자 없는 스태미너는 fill=0·alpha=0.35·`-- / --`다. 실제 스태미너 규칙을 만들지 않았다.
+- `CombatFootstepHud`는 C의 사건별 방향·가시성·색·Alpha를 HUD에 미리 직렬화한 Image 24개에 적용한다. 런타임 Instantiate가 없고 풀이 가득 차면 새 표시를 생략한다. 재활성화 시 초기 스냅샷을 다시 읽고 풀은 유지한다.
+- `CombatHudReferences`로 Record·12개 방향 마커·새 HUD 참조를 직렬화했다. BambooDefenseHudAuthoring의 첫 TMP/전체 마커 검색을 교체해 새 값 텍스트가 Record 연결을 바꾸지 않게 했다.
+
+## Unity 씬 연결
+
+열려 있는 `BambooDefense` 씬을 Unity Editor로 수정했다.
+
+| 오브젝트 | 적용한 컴포넌트 / 보존한 연결 |
 | --- | --- |
-| CombatSessionContracts.cs | CombatSessionKey, CombatTimestamp, ICombatSessionClock |
-| CombatEventContracts.cs | CombatEventIdentity, CombatEntityKey, CombatCorrelationIds |
-| DefenseResolution.cs | IncomingAttackKind, DefenseOutcome, DefenseResolution |
-| PlayerHudContracts.cs | StaminaSnapshot, IPlayerStaminaReadModel |
-| ThreatPresentationContracts.cs | 위협/발소리 스냅샷, 초기 조회와 변경 사건 |
-| CombatTimeContracts.cs | 요청/토큰/해제 인터페이스 |
-| CombatTelemetryEnvelope.cs | 저장 DTO와 구분한 사건 메타데이터 |
+| `/GameSceneInitializer` | `CombatSessionRuntime` 추가, 기본 배율 1 |
+| `/DefenseDirector` | `CombatThreatPresentationProvider` 추가. 기존 `BambooDefenseDirector`, `_director` 연결 유지 |
+| `BambooDefenseHud` | 기존 Canvas와 `DefenseDirectionMarker` 12개, Graphics 배열 유지 |
+| `BambooDefenseHud/CombatStatusCanvas` | HP·스태미너 게이지 및 CombatPlayerHud. PlayerHealth 씬 참조 연결 |
+| `CombatStatusCanvas/FootstepMarkers` | CombatFootstepHud. C 공급자와 CombatFootstepMarker.prefab 연결 |
 
-모두 `BlindBlade.Combat.Contracts` namespace의 불변 값 또는 인터페이스다. MonoBehaviour, 실제 공급자, 전역 static 이벤트, 상태 저장기, 직렬화 에셋 참조는 추가하지 않았다. 기존 ActionId의 int 형식을 유지했다. 자동 생성 속성 기반 값 타입은 JsonUtility 저장 대상으로 사용하지 않는다.
+Unity CLI의 component property 조회로 컴포넌트와 기본 Inspector 값 및 HUD 배열 연결을 확인했다. `BambooDefense.unity`를 Editor에서 저장했다. 씬을 재생성하지 않았다.
 
-### 문서
+## 검증 결과와 제한
 
-- `docs/contracts/전투_인지_HUD_D0_계약.md`: 기준선·소유권·필드 의미·시계·사건 순서·합의 대기·담당별 요청.
-- `docs/contracts/combat-telemetry-v0.1.schema.json`: 로그 봉투 필드와 ID 범위. 사건 payload별 검증은 D5 대상이다.
-- `docs/features/전투_인지_HUD_공통_계약.md`: FEATURE_SPEC 양식의 신규 명세.
-- `docs/FEATURE_SPEC.md`: 개발 중인 공통 계약 등록.
-- PRD: D0 진행과 남은 공동 확인을 체크박스로 반영.
-- 이 progress: 새 담당자가 재개할 시작점 기록.
+- Unity Editor 6000.3.22f1이 연결된 상태에서 스크립트 재컴파일 완료(`compilationFailed=false`, 컴파일 오류 0)를 확인했다.
+- HUD 코드 재컴파일은 completed, compilationFailed=false, 오류·경고 0건이다.
+- Play에서 HP 초기 100/100·fill=1, 실제 전투 사망 후 0/100·fill=0, 공급 전 스태미너 상태를 확인했다.
+- 실제 발소리 스냅샷 14개·활성 마커 14개를 확인했다. HUD 비활성/재활성 뒤 풀 24개 유지와 초기 스냅샷 재표시를 확인했다. 사망 후 발소리 목록/표시는 0개였다.
+- `UserSettings/CombatHud/Hud-Alive.png`, `Hud-Footsteps-Final.png`, `Hud-GameOver.png`의 GameView 화면을 직접 확인했다. 임시 최대 HP 캡처 Hud-Footsteps.png와 Overlay UI가 빠진 Camera 렌더 캡처 Hud-1920x1080.png는 최종 HUD 화면 근거에서 제외한다.
+- 발소리 장시간 관찰을 위한 Play 인스턴스의 임시 최대 HP 10000은 저장하지 않았다. 종료 후 저장된 씬을 다시 열어 최대 HP 100 복원을 확인했다.
+- 실제 스태미너 소모·회복, 키보드/패드 전투 전체, 풀 초과·적 재사용·전체 화면비 인수는 미확인이다.
+- 테스트 코드는 작성하거나 실행하지 않았다.
+- 텔레메트리 JSON Schema `0.1.0`은 유지했으며 recorder·저장 DTO·전처리기는 아직 구현하지 않았다.
+- 이전 D0 batch compile 종료 시 TMP 동적 글꼴 에셋 자동 저장이 기록돼 있다. 사본은 `UserSettings/CombatHud/D0-20261014/ChosunCentennial_after_compile.asset`에 남아 있다. 이번에는 live Editor 재컴파일을 썼고 해당 글꼴을 의도적으로 수정하지 않았다.
 
-## 확인 결과
+## 다음 작업자가 이어갈 순서
 
-- 기존 소스 검색: 새 판정/ID/스태미너/표시 공급자의 구현이 아직 확인되지 않았다.
-- JSON: PowerShell JSON 파싱 성공. JSON Schema 전체 의미 검증과 사건별 payload 검증은 미실시다.
-- Unity 연결: status는 `STATUS_NO_INSTANCES`. pipeline list는 isRunning=true이나 서버 미연결, SafeMode=false를 보고했다. OS 프로세스에는 Unity Editor가 없고 기존 Editor.log 마지막은 종료 기록이었다.
-- Unity 컴파일: 6000.3.22f1 batch 실행 성공, 종료 코드 0, 컴파일 오류 0. 고유 C# 경고 1건은 기존 `KatanaDebugOverlay.cs:16`의 `_showCombatFeedback` 미사용(CS0414)이다. 같은 경고가 로그에 두 번 출력됐으므로 고유 건수로 기록한다.
-- 검증 명령: `unity run <프로젝트 경로> --editor-version 6000.3.22f1 --timeout 240 --format json -- -nographics -logFile <아래 로그 경로>`.
-- 검증 근거: `UserSettings/CombatHud/D0-20261014/unity-compile.log`, `verification.json`. UserSettings는 다른 작업 공간에 자동 전달되지 않으므로 필요한 근거 파일은 별도로 전달한다.
-- Play·실제 입력·화면·음향: 미실시. D0에는 런타임 연결이 없다.
-- 공용 씬/프리팹: 직접 저장하지 않았고 기준 에셋 4개의 SHA-256이 모두 시작 시 값과 일치한다.
-- 테스트 코드: 작성·실행하지 않았다.
+1. `AGENTS.md` → `docs/FEATURE_SPEC.md` → [D PRD](전투_인지_HUD_D_구현_PRD.md) → 이 문서 → [계약 v0.2.0](../contracts/전투_인지_HUD_D0_계약.md)를 읽는다.
+2. 다른 담당자 작업공간과 이 공유 계약의 변경 여부를 대조한다. `BlindBlade.Combat.Contracts` 아래 타입을 다시 전역 복사하지 않는다.
+3. A/B/C 소유권 표와 연결 지점을 기준으로 코드 리뷰한다. 특히 resolver 반환 뒤 `TakeDamage` 중복 호출이 없는지 확인한다.
+4. Unity Play에서 준비→투척→패링/피해→GameOver→재도전을 수동 확인하고 Console·마커 종료·세션 배율을 기록한다.
+5. D3는 A의 실제 스태미너 원본이 준비되면 IPlayerStaminaReadModel을 구현·연결하고 소모·회복을 확인한다. UI 규칙을 복제하지 않는다. 실제 피격 전용 비네팅 전환은 별도 진행한다.
+6. D4에서 다른 위협 유형과 발소리 풀 초과·사망/재사용·화면 경계 전체 인수를 진행한다. C의 표시 규칙을 D에 중복 구현하지 않는다.
+7. D5 로그 저장, D6 강화/회피 통합, D7 전체 인수, D8 최종 문서를 계획 순서대로 진행한다.
 
-### 컴파일 확인 중 발생한 폰트 자동 저장
+## 이번 작업에서 수정한 범위
 
-- Editor 종료 콜백에서 TMP가 `Assets/Fonts/ChosunCentennial_otf SDF.asset`의 동적 폰트 데이터를 정리하고 저장했다. 종료 로그와 해당 파일 갱신 시각으로 확인했다.
-- 실행 전 이 폰트의 해시·내용 사본을 확보하지 못했다. D0 이전 내용과 정확히 비교할 수 없으므로 기존 사용자 변경을 추정해 복원하지 않았다.
-- `.git/index`를 읽기 전용으로 직접 해석하여 확인한 현재 폰트 blob은 인덱스 blob과 다르다. 이것만으로 전체 차이가 이번 실행에서 생겼다고 단정할 수 없다. Git CLI·스테이징 변경은 없다.
-- 현재 폰트 사본은 `UserSettings/CombatHud/D0-20261014/ChosunCentennial_after_compile.asset`에 보존했다. 이 파일은 D0 계약 기능의 의도된 변경에 포함하지 않는다.
-- 다음 Editor 실행 검증 전에는 동적 폰트처럼 종료 시 자동 저장되는 파일도 사본/해시를 확보한다. 폰트의 원래 내용이 확보되면 자동 저장 부분만 대조해 복원한다.
+- 코드: `Combat/Contracts` 공통 타입·세션 런타임, `DamageContext`, `PlayerContracts`, `KatanaDamageReceiver`, `PlayerMotor`, `GameSceneInitializer`, `GameStateManager`, `EnemyHealth`, `DefenseShuriken`, `CombatThreatPresentationProvider`, `ShurikenDirectionIndicator`.
+- Unity 에셋: `Assets/Scenes/Defense/BambooDefense.unity`의 기존 GameSceneInitializer/DefenseDirector 루트 컴포넌트 연결.
+- 문서: 공통 계약, 전투 판정, BambooDefense·게임 씬 공통 구성·게임오버·적 전투 명세, D PRD, 이 progress.
+### 2026-10-14 이전 공통 계약 통합 기록
 
-## 합의·요청 상태
+- 월드 수리검의 ShurikenPerceptionEffect가 C 공급자의 VisibilityThreshold를 읽도록 통일했다. BambooDefense Inspector의 _visibilityThreshold를 0으로 맞추고 씬을 Unity Editor에서 저장했다.
+- DefenseShuriken.Launch의 XML summary에 공격 ID·투사체 ID 발급과 비행 상태 변경을 명시했다.
+- 최신 Unity Editor 재컴파일은 up_to_date, failed=false, 오류 0건, 경고 0건이다.
+- 이 이전 계약 통합 시점에는 Play Mode를 실행하지 않았다. 그 뒤의 HUD 추가 검증은 위 현재 상태와 전투 HUD 명세를 따른다.
 
-| 대상 | 준비한 요청 | 상태 |
-| --- | --- | --- |
-| A | ID 확장, 스태미너 읽기, 판정 사건, 시간 이관, 강화 상태/시간 의미 | 문서 준비, 전달·응답 미확인 |
-| B | ID/세대/수명 스냅샷, 조회/제거/피해 API, 종료 순서, 최대 위협 수 | 문서 준비, 전달·응답 미확인 |
-| C | 초기 전체 조회, 표시 방향/색/순서, 발소리 고정 원점·수명 공유 | 문서 준비, 전달·응답 미확인 |
-| 전원 | 같은 계약 버전, 시계/기획 결정, 작업 공간·미저장 상태 | 공동 확인 대기 |
+### 2026-10-14 HP·스태미너·발소리 HUD 인수인계
 
-실제 외부 메시지 전송은 하지 않았다. D가 계약 파일을 작성한 것과 네 담당자가 합의한 것을 구분한다. D0 전체 종료 조건은 아직 충족하지 않았다.
-
-## 다음 작업과 재개 방법
-
-1. AGENTS.md → FEATURE_SPEC → PRD → 이 progress → D0 계약을 읽는다.
-2. 현재 파일에서 `BlindBlade.Combat.Contracts`를 검색해 A/B/C가 추가로 연결했는지 확인한다. 신규 작업이 있으면 덮어쓰지 말고 차이를 계약 변경 기록에 반영한다.
-3. D0 계약의 DC01~DC11에 실제 답변·담당·일시·버전을 기록한다. 미구현 API를 임의의 성공 값으로 채우지 않는다.
-4. 각 작업 공간의 채택 계약과 컴파일을 확인한 뒤 D0 완료로 전환한다.
-5. D1은 CombatSessionKey 생성/세대, 공통 시계와 입력 시계 기준점, GameSceneInitializer Initialize/Shutdown 순서부터 구현한다. 현재 Game.InitializeSession 안의 상태 Initialize가 이전 세션 Shutdown을 수행하는 순서를 먼저 검토한다.
-
-현재 열린 Editor와 미저장 편집은 없다(OS 프로세스 확인 기준). batch 확인은 씬 저장을 요청하지 않는다. 공용 에셋 원본 해시는 D0 계약 1절에 있으며, 이번 신규 계약은 GUID가 연결된 런타임 컴포넌트가 없으므로 D0에서 되돌릴 때는 D0 신규 파일·문서와 문서 목록의 해당 변경만 대상으로 한다. 기존 전투 코드·공용 에셋은 되돌리기 대상이 아니다.
+- 추가 코드: `Assets/Scripts/UI/CombatHud/`의 CombatResourceGauge, CombatPlayerHud, CombatFootstepMarker, CombatFootstepHud, CombatHudReferences. Editor 생성/이관은 CombatHudAuthoring, 연결은 BambooDefenseHudAuthoring이다.
+- 수정 에셋: 기존 BambooDefenseHud.prefab·BambooDefense.unity. 새 에셋: CombatFootstepMarker.prefab, UI/Placeholders의 PNG 4개와 Unity가 생성한 meta. 기존 프리팹·씬 GUID와 기록/수리검 연결을 유지했다.
+- 이미지 교체: HUD 프리팹의 HealthGauge·StaminaGauge 아래 Icon/Background/Fill → Image Source Image. 발소리 전체 교체는 CombatFootstepMarker.prefab 루트의 Source Image 한 곳이다. PNG 내용을 같은 경로에서 교체할 때 meta를 보존한다.
+- 스태미너 원본 확인: 저장소 전체에서 실제 구현이 없고 계약만 있다. 과거 TASK_0084~0087 명세의 PlayerStamina·PlayerStaminaBar는 현재 구현으로 간주하지 않는다. A가 같은 Player에 공급자를 붙이면 바인딩 때 자동 조회하며, 다른 위치면 Stamina Source를 명시하거나 BindSources를 호출한다.
+- 현재 요청 범위 밖: 실제 스태미너 규칙, 피격 전용 비네팅 전환, 다른 투사체, 로그 저장, 강화/극한 회피. D3/D4 전체 완료로 표시하지 않는다.
+- 최초 런타임 생성 발소리 풀에서 Play 종료 native `t.GetParent() == nullptr` assertion을 발견했다. 발소리 HUD 비활성 비교에서는 발생하지 않았다. HUD에 중첩 마커 24개를 미리 직렬화한 뒤 사망 후 종료·활성 마커 상태 종료 두 번 모두 새 오류 0건이었다. 효과가 없었던 종료 가드는 제거했다.
+- 최종 직렬화 풀 Play 표본: HP 70, 발소리 스냅샷 9, 활성 마커 9, 전체 마커 24. `Hud-Footsteps-Final.png`가 최종 화면 근거다.
+- FMOD 종료 경고 `Cannot close System while suspended` 1종은 남는다. HUD 기능 외 FMOD 구현은 수정하지 않았다. 과거 Console의 assertion 이력과 최신 실행의 오류 0을 구분한다.
+- 다음 시작점은 A의 IPlayerStaminaReadModel 공급자 연결 또는 별도 요청된 피격 전용 비네팅이다. 이미지 교체 방법·기본값은 전투 HUD 명세에 있다.
+- 최종 Editor 상태: BambooDefense 편집 모드, scene.isDirty=false, CombatStatusCanvas 활성, 최대 HP 100. Missing Script 0, Record 참조 유지, 방향 마커 12/누락 0, 중첩 발소리 마커 24, 새 Image 30/Source Image 누락 0/Raycast Target 0. 재설치 후에도 동일 수량으로 유지됐다.

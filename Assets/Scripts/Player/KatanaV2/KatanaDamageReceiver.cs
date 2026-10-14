@@ -1,5 +1,7 @@
 using UnityEngine;
 
+using BlindBlade.Combat.Contracts;
+
 
 /// <summary>적의 기존 IDamageable 호출을 받아 피해 전달 전에 전방 근접·보스 돌진 방어를 확인한다.</summary>
 [DisallowMultipleComponent]

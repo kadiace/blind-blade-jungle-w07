@@ -39,18 +39,18 @@ namespace BlindBlade.Combat.Contracts
     /// <summary>입력, 행동, 적 공격, 개별 타격, 투사체와 회피를 연결하는 식별 값이다.</summary>
     public readonly struct CombatCorrelationIds
     {
-        public long InputId { get; }
+        public int InputId { get; }
         public int ActionId { get; }
-        public long AttackId { get; }
-        public long HitId { get; }
-        public long ProjectileId { get; }
-        public long DodgeId { get; }
+        public int AttackId { get; }
+        public int HitId { get; }
+        public int ProjectileId { get; }
+        public int DodgeId { get; }
 
         /// <summary>
         /// inputId, actionId, attackId, hitId, projectileId, dodgeId를 사건 연결 값으로 저장한다.
-        /// 미해당 ID는 0으로 표현하고 기존 PlayerController의 int ActionId를 보존한다.
+        /// 모든 ID는 0을 미부여 값으로 사용하고 기존 int ActionId와 같은 정수 형식을 쓴다.
         /// </summary>
-        public CombatCorrelationIds(long inputId, int actionId, long attackId, long hitId, long projectileId, long dodgeId)
+        public CombatCorrelationIds(int inputId, int actionId, int attackId, int hitId, int projectileId, int dodgeId)
         {
             InputId = inputId;
             ActionId = actionId;

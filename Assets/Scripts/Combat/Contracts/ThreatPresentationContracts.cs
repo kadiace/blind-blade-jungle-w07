@@ -17,6 +17,8 @@ namespace BlindBlade.Combat.Contracts
         public bool WorldVisible { get; }
         public bool UiVisible { get; }
         public Vector2 UiDirection { get; }
+        public Vector3 WorldPosition { get; }
+        public float Proximity { get; }
         public Color Color { get; }
         public float Alpha { get; }
 
@@ -27,7 +29,7 @@ namespace BlindBlade.Combat.Contracts
         public ThreatPresentationSnapshot(
             CombatSessionKey session, CombatEntityKey target, long revision,
             bool isActive, bool isEligible, bool isInCamera, bool worldVisible, bool uiVisible,
-            Vector2 uiDirection, Color color, float alpha)
+            Vector2 uiDirection, Vector3 worldPosition, float proximity, Color color, float alpha)
         {
             Session = session;
             Target = target;
@@ -38,6 +40,8 @@ namespace BlindBlade.Combat.Contracts
             WorldVisible = worldVisible;
             UiVisible = uiVisible;
             UiDirection = uiDirection;
+            WorldPosition = worldPosition;
+            Proximity = Mathf.Clamp01(proximity);
             Color = color;
             Alpha = alpha;
         }
